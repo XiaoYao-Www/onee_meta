@@ -1,0 +1,25 @@
+[project]
+name = "onee-meta"
+version = "0.1.0"
+description = "一款使用PySide6編寫的漫畫資料編輯器"
+authors = [
+    {name = "逍遙(XiaoYao)"}
+]
+license = {text = "GNU GENERAL PUBLIC LICENSE Version 3"}
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pillow (>=11.3.0,<12.0.0)",
+    "pyside6 (>=6.9.1,<7.0.0)",
+    "natsort (>=8.4.0,<9.0.0)",
+    "lxml (>=6.0.0,<7.0.0)",
+    "nuitka (>=2.7.11,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
