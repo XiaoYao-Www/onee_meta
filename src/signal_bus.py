@@ -11,6 +11,7 @@ class _AppSettingSignals(QObject):
     """應用設定訊號
     """
     fontSizeChanged = Signal(int)
+    langChanged = Signal(str)
 
     def __init__(self):
         super().__init__()

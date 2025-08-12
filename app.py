@@ -18,7 +18,7 @@ if __name__ == "__main__":
     translator = QTranslator()
 
     # 3. MVC 組裝
-    view = MainView(model.appSetting.data)
+    view = MainView(model.appSetting.data) # 傳入的設定為直接引用，應避免修改。
     controller = MainController(
         model=model,
         view=view,
