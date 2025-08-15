@@ -22,6 +22,13 @@ class MainModel():
         self.appSetting.update({
             "font_size": old_setting.get("font_size", 10), # 應用字體大小
             "lang": old_setting.get("lang", ""), # 語言 ("" 代表不使用翻譯)
+            "image_exts": old_setting.get("image_exts", [ # 圖片附檔名
+                ".jpg", ".jpeg", ".png",
+                ".webp", ".bmp", ".gif",
+            ]),
+            "allow_files": old_setting.get("allow_files", [ # 允許檔案
+                ".nomedia",
+            ]),
         })
         ## 應用資料儲存
         self.appStore = DataStore()
