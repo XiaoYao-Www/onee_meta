@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
 )
 # 自訂庫
 from src.classes.ui.widgets.clickable_url_label import ClickableUrlLabel
-from src.app_config import app_version
+from src.app_config import appVersion
 from src.signal_bus import SIGNAL_BUS
 ## 翻譯
 from src.translations import TR
@@ -44,7 +44,7 @@ class AppInfoTab(QWidget):
         ## 介紹內容
         self.about_software_text = QTextEdit()
         self.about_software_text.setPlainText(
-            TR.UI_CONSTANTS["軟體介紹"]().format(version = app_version)
+            TR.UI_CONSTANTS["軟體介紹"]().format(version = appVersion)
         )
         self.about_software_text.setReadOnly(True)
         ## github 連結
@@ -75,6 +75,6 @@ class AppInfoTab(QWidget):
         #
         self.about_software_label.setText(TR.UI_CONSTANTS["📦 軟體資訊"]())
         self.about_software_text.setPlainText(
-            TR.UI_CONSTANTS["軟體介紹"]().format(version = app_version)
+            TR.UI_CONSTANTS["軟體介紹"]().format(version = appVersion)
         )
         self.about_software_github_label.setText(TR.UI_CONSTANTS["專案 GitHub 專案連結"]())

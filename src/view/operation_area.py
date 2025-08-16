@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 from PySide6.QtCore import Qt
-from typing import Any
+from typing import Any, Optional
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
@@ -11,6 +11,7 @@ from src.model.main_model import MainModel
 ## tab
 from src.view.tabs.app_info_tab import AppInfoTab
 from src.view.tabs.app_setting_tab import AppSettingTab
+from src.view.tabs.info_editor_tab import InfoEditorTab
 
 
 class OperationArea(QWidget):
@@ -41,6 +42,9 @@ class OperationArea(QWidget):
         # tab面板
         self.tabs = QTabWidget()
         ## tabs
+        ### 資訊編輯頁
+        self.info_editor_tab = InfoEditorTab()
+        self.index_info_editor_tab = self.tabs.addTab(self.info_editor_tab, TR.UI_CONSTANTS["資訊"]())
         ### app設定
         self.app_setting_tab = AppSettingTab(model)
         self.index_app_setting_tab = self.tabs.addTab(self.app_setting_tab, TR.UI_CONSTANTS["設定"]())
@@ -61,19 +65,39 @@ class OperationArea(QWidget):
         self.ui_layout.addWidget(self.tabs)
         self.ui_layout.addWidget(self.start_button)
         self.setLayout(self.ui_layout)
+        ## 預設顯示配置
+        self.tabs.setTabVisible(self.index_info_editor_tab, False)
+        self.tabs.setCurrentIndex(self.index_app_info_tab)
+        self.changeStartButtonVisible(False)
 
     def signal_connection(self):
         """信號連接
         """
+        # 切換開始按鈕顯示狀態
+        self.tabs.currentChanged.connect(lambda _: self.changeStartButtonVisible())
         # 語言刷新
         # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi) 
 
     ##### 功能性函式
 
+    def changeStartButtonVisible(self, state: Optional[bool] = None) -> None:
+        """設置開始按鈕可見狀態
+        """
+        if state != None:
+            self.start_button.setVisible(state)
+        else:
+            self.start_button.setVisible(
+                not(self.tabs.currentIndex() in [self.index_app_info_tab, self.index_app_setting_tab])
+            )
+
+
     def retranslateUi(self):
         """UI 語言刷新
         """
         # tabs
+        ## 資訊編輯
+        self.tabs.setTabText(self.index_info_editor_tab, TR.UI_CONSTANTS["資訊"]())
+        self.info_editor_tab.retranslateUi()
         ## app設定
         self.tabs.setTabText(self.index_app_setting_tab, TR.UI_CONSTANTS["設定"]())
         self.app_setting_tab.retranslateUi()

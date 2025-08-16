@@ -55,7 +55,7 @@ class MainView(QWidget):
         splitter.addWidget(self.left_widget)
         splitter.addWidget(self.right_widget)
         ## 設定初始大小比例 (像素)
-        splitter.setSizes([300, 500])
+        splitter.setSizes([200, 500])
 
         # 結構組合
         self.ui_layout = QVBoxLayout()
