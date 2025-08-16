@@ -66,7 +66,6 @@ class MainView(QWidget):
         """信號連接
         """
         # 應用設定
-        SIGNAL_BUS.appSetting.fontSizeChanged.connect(self.change_font_size)
         # 訊息框
         SIGNAL_BUS.ui.sendCritical.connect(self.send_critical)
         SIGNAL_BUS.ui.sendInformation.connect(self.send_information)

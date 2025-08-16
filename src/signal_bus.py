@@ -1,7 +1,7 @@
 from PySide6.QtCore import QObject, Signal
 
 class _UISignals(QObject):
-    """UI 調用訊號
+    """UI 接受訊號
     """
     sendCritical = Signal(str, str)
     sendInformation = Signal(str, str)
@@ -11,6 +11,8 @@ class _AppSettingSignals(QObject):
     """應用設定訊號
     """
     fontSizeChanged = Signal(int)
+    imageExtChanged = Signal(list)
+    allowFileChanged = Signal(list)
     langChanged = Signal(str)
 
     def __init__(self):

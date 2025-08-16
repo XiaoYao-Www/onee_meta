@@ -1,5 +1,6 @@
 from PySide6.QtCore import QObject, QTranslator
 from PySide6.QtWidgets import QApplication
+from typing import List
 # 自訂庫
 from src.model.main_model import MainModel
 from src.view.main_view import MainView
@@ -26,9 +27,41 @@ class MainController(QObject):
         """訊號連接
         """
         # App設定
+        SIGNAL_BUS.appSetting.fontSizeChanged.connect(self.changeFontSize) # 字體大小切換
+        SIGNAL_BUS.appSetting.imageExtChanged.connect(self.changeImageExt) # 圖片附檔名設定
+        SIGNAL_BUS.appSetting.allowFileChanged.connect(self.changeAllowFile) # 允許檔案設定
         SIGNAL_BUS.appSetting.langChanged.connect(self.changeLang) # 語言切換
 
     ##### 功能性函式
+
+    ###### 應用設定
+
+    def changeAllowFile(self, fileList: List[str]) -> None:
+        """修改允許檔案設定
+
+        Args:
+            fileList (List[str]): 允許檔案列表
+        """
+        self.model.appSetting.set("allow_files", fileList)
+        self.view.right_widget.app_setting_tab.allow_files_changed_display(fileList)
+
+    def changeImageExt(self, extList: List[str]) -> None:
+        """修改圖片副檔名設定
+
+        Args:
+            extList (List[str]): 副檔名列表
+        """
+        self.model.appSetting.set("image_exts", extList)
+        self.view.right_widget.app_setting_tab.image_extension_changed_display(extList)
+
+    def changeFontSize(self, size: int) -> None:
+        """切換字體大小
+
+        Args:
+            size (int): 大小
+        """
+        self.model.appSetting.set("font_size", size)
+        self.view.change_font_size(size)
 
     def changeLang(self, langName: str) -> None:
         """切換語言
