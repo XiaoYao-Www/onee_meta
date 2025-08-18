@@ -102,7 +102,6 @@ class AppSettingTab(QWidget):
         self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.appSetting.langChanged.emit(lang))
         # 語言刷新
         # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi)
-        pass
 
     def functional_construction(self):
         """功能架構

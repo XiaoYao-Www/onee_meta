@@ -1,12 +1,13 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QListView,
     QAbstractItemView, QPushButton, QComboBox,
-    QLabel, QHBoxLayout,
+    QLabel, QHBoxLayout, QFileDialog,
 )
 from PySide6.QtCore import Qt, QSignalBlocker
 from typing import Optional
 # 自訂庫
 from src.classes.ui.numbered_item_delegate import NumberedItemDelegate
+from src.classes.ui.widgets.eliding_button import ElidingButton
 from src.translations import TR
 from src.signal_bus import SIGNAL_BUS
 
@@ -33,7 +34,7 @@ class ComicListView(QWidget):
         """UI初始化
         """
         # 路徑選擇按鈕
-        self.comic_path_button = QPushButton(TR.UI_CONSTANTS["選擇漫畫資料夾路徑"]())
+        self.comic_path_button = ElidingButton(TR.UI_CONSTANTS["選擇漫畫資料夾路徑"](), '', 100)
 
         # 排序和資訊
         ## 排序
@@ -80,10 +81,19 @@ class ComicListView(QWidget):
     def signal_connection(self):
         """信號連接
         """
+        # 選擇漫畫資料夾
+        self.comic_path_button.pressed.connect(self.selectComicFolder)
         # 語言刷新
         # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi)
 
     ##### 功能性函式
+
+    def selectComicFolder(self) -> None:
+        """選擇漫畫路徑
+        """
+        folder = QFileDialog.getExistingDirectory(self, TR.UI_CONSTANTS["選擇漫畫資料夾"]())
+        if folder:
+           SIGNAL_BUS.uiSend.selectComicFolder.emit(folder)
 
     def changeInfoLabel(self, select: Optional[int] = None, total: Optional[int] = None) -> None:
         """切換顯示資訊

@@ -26,6 +26,8 @@ class MainController(QObject):
     def signal_connection(self) -> None:
         """訊號連接
         """
+        # 應用功能
+        SIGNAL_BUS.uiSend.selectComicFolder.connect(self.selectComicFolder) # 選擇漫畫資料夾
         # App設定
         SIGNAL_BUS.appSetting.fontSizeChanged.connect(self.changeFontSize) # 字體大小切換
         SIGNAL_BUS.appSetting.imageExtChanged.connect(self.changeImageExt) # 圖片附檔名設定
@@ -33,6 +35,21 @@ class MainController(QObject):
         SIGNAL_BUS.appSetting.langChanged.connect(self.changeLang) # 語言切換
 
     ##### 功能性函式
+
+    ###### 應用功能
+
+    def selectComicFolder(self, folder: str) -> None:
+        """選擇漫畫資料夾
+
+        Args:
+            folder (str): 資料夾路徑
+        """
+        self.view.loading.show() # 顯示處理中
+        self.model.appStore.set("comic_folder_path", folder)
+        self.view.left_widget.comic_path_button.setText(folder)
+        self.view.left_widget.comic_path_button.setToolTip(folder)
+        self.model.readComicFolder(folder)
+        self.view.loading.close() # 關閉處理中
 
     ###### 應用設定
 

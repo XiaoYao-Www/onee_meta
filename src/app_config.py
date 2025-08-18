@@ -12,6 +12,8 @@ appIconPath = "assets/icon.png"
 translationFilePath = "assets/translations"
 # 版本
 appVersion = "0.1.0"
+# 漫畫壓縮檔副檔名
+compressionComicExt = (".zip", ".cbz")
 # info_editor_tab 配置
 infoEditorTabConfig = {
     "書籍資訊": {

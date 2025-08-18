@@ -12,6 +12,7 @@ class _tr:
         self._UI_CONSTANTS = {
             # main_view
             "Onee Meta": LazyStr("Onee Meta", "ui_main_view"),
+            "處理中...": LazyStr("處理中...", "ui_main_view"),
             # sendCritical
             "設定錯誤": LazyStr("設定錯誤", "ui_send_critical"),
             "沒有目標語言檔案": LazyStr("沒有目標語言檔案", "ui_send_critical"),
@@ -20,6 +21,7 @@ class _tr:
             "檔名": LazyStr("檔名", "ui_comic_list_view"),
             "手動": LazyStr("手動", "ui_comic_list_view"),
             "{selected} / {total} 本漫畫": LazyStr("{selected} / {total} 本漫畫", "ui_comic_list_view"),
+            "選擇漫畫資料夾": LazyStr("選擇漫畫資料夾", "ui_comic_list_view"),
             # operation_area
             "儲存編輯": LazyStr("儲存編輯", "ui_operation_area"),
             "關於": LazyStr("關於", "ui_operation_area"),

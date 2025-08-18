@@ -10,6 +10,7 @@ from src.signal_bus import SIGNAL_BUS
 from src.app_config import appIconPath
 from src.view.comic_list_view import ComicListView
 from src.view.operation_area import OperationArea
+from src.classes.ui.widgets.loading_dialog import LoadingDialog
 ## 翻譯
 from src.translations import TR
 from src.model.main_model import MainModel
@@ -56,6 +57,9 @@ class MainView(QWidget):
         splitter.addWidget(self.right_widget)
         ## 設定初始大小比例 (像素)
         splitter.setSizes([200, 500])
+
+        # 處理中提示
+        self.loading = LoadingDialog(TR.UI_CONSTANTS["處理中..."]())
 
         # 結構組合
         self.ui_layout = QVBoxLayout()

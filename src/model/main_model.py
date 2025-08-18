@@ -1,10 +1,12 @@
 import json
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 import os
 from pathlib import Path
 # 自訂庫
 from src.app_config import appSettingJsonPath, translationFilePath
 from src.classes.data.data_store import DataStore
+from src.classes.data.comic_info_data import ComicInfoData
+from src.model.functions.comic_read_write import readComicFolder
 
 class MainModel():
     """主後端儲存
@@ -34,17 +36,35 @@ class MainModel():
         self.appStore = DataStore()
         self.appStore.update({
             "translation_files": translation_files, # 翻譯檔案字典
+            "comic_folder_path": "", # 漫畫資料夾路徑
+            "comic_list": [], # 漫畫列表，用於顯示排序
         })
         ## 漫畫資料儲存
         self.comicStore = DataStore()
-        self.comicStore.update({
-
-        })
         
         # 功能綁定
         self.appSetting.subscribe(self.saveAppSetting) # 綁定設定修改
     
     ##### 功能性函式
+
+    ###### 檔案讀寫
+
+    def readComicFolder(self, comicFolderPath: str) -> None:
+        """載入漫畫資料夾內容
+
+        Args:
+            comicFolderPath (str): 資料夾路徑
+        """
+        comic_metadata: Dict[str, ComicInfoData] = readComicFolder(
+            comicFolderPath,
+            self.appSetting.get("image_exts", []),
+            self.appSetting.get("allow_files", []),
+        )
+        # 資料儲存
+        self.comicStore.clear()
+        self.comicStore.update(comic_metadata)
+        # 漫畫列表
+        self.appStore.set("comic_list", list(comic_metadata.keys()))
 
     ###### 應用設定檔
 
