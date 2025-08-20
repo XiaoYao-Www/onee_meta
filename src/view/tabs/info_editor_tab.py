@@ -6,10 +6,12 @@ from PySide6.QtWidgets import (
     QToolButton
 )
 from PySide6.QtCore import Qt
+from typing import Dict, List
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 from src.app_config import infoEditorTabConfig
 from src.classes.ui.widgets.smart_integer_field import SmartIntegerField
+from src.classes.data.comic_info_data import ComicInfoData
 ## 翻譯
 from src.translations import TR
 
@@ -17,8 +19,9 @@ class InfoEditorTab(QWidget):
     def __init__(self):
         super().__init__()
         # 變數創建
+        self.updating_fields = False
         self.toggle_buttons = {}
-        self.editors = {}
+        self.editors: Dict[str, QLineEdit | SmartIntegerField | QTextEdit | QComboBox] = {}
         self.labels = {}
 
         # 初始化 UI
@@ -72,7 +75,7 @@ class InfoEditorTab(QWidget):
                 widget_cls = field_cfg["type"]
                 if widget_cls == QComboBox:
                     widget = QComboBox()
-                    widget.addItems(field_cfg.get("options", ["{保留}"]))
+                    widget.addItems(field_cfg.get("options", ["{keep}"]))
                 elif widget_cls == SmartIntegerField:
                     widget = SmartIntegerField()
                 elif widget_cls == QTextEdit:
@@ -98,6 +101,50 @@ class InfoEditorTab(QWidget):
         pass
 
     ### 功能函式 ###
+
+    def setComicInfoData(self, comicData: List[ComicInfoData]) -> None:
+        """
+        多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
+        """
+        self.updating_fields = True
+        try:
+            for section, fields in infoEditorTabConfig.items():
+                for field_key, field_cfg in fields.items():
+                    info_key = field_cfg["info_key"]
+                    values = []
+
+                    for d in comicData:
+                        # 每筆資料從 fields 中抓取對應欄位
+                        val = d.get("fields", {}).get("base", {}).get(info_key, "") # 目前只有 base
+                        values.append(val)
+
+                    if not values:
+                        display_val = ""
+                    elif all(v == values[0] for v in values):
+                        display_val = values[0]
+                    else:
+                        display_val = "{keep}"
+
+                    editor = self.editors.get(info_key)
+                    if isinstance(editor, QComboBox):
+                        idx = editor.findText(display_val)
+                        if idx == -1 or idx == None:
+                            idx = editor.findText("{keep}")
+                        editor.setCurrentIndex(idx)
+                    elif isinstance(editor, QTextEdit):
+                        editor.setPlainText(display_val)
+                    elif isinstance(editor, SmartIntegerField):
+                        if display_val == "{keep}" or display_val == "" or display_val == "-1":
+                            editor.setValue(display_val)
+                        else:
+                            try:
+                                editor.setValue(int(display_val))
+                            except ValueError:
+                                editor.setValue("{keep}")
+                    elif editor != None:
+                        editor.setText(display_val)
+        finally:
+            self.updating_fields = False
 
     def retranslateUi(self):
         """ UI 語言刷新 """

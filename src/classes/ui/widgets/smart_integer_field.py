@@ -8,7 +8,7 @@ class SmartIntegerField(QLineEdit):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setPlaceholderText(TR.UI_CONSTANTS["輸入keep保留原值"]())
+        self.setPlaceholderText(TR.UI_CONSTANTS["輸入{keep}保留原值"]())
         self.textChanged.connect(self._on_text_changed)
         self._state = "clear"  # 初始狀態為清除
 
@@ -19,7 +19,7 @@ class SmartIntegerField(QLineEdit):
             text (str): 輸入文字
         """
         text = text.strip()
-        if text in "keep":
+        if text in "{keep}":
             self._state = "preserve"
         elif text == "":
             self._state = "clear"
@@ -56,9 +56,9 @@ class SmartIntegerField(QLineEdit):
         Returns:
             str: 狀態
         """
-        if value == "keep":
+        if value == "{keep}":
             self._state = "preserve"
-            self.setText("keep")
+            self.setText("{keep}")
         elif type(value) == int:
             if value >= 0:
                 self._state = "value"

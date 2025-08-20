@@ -3,14 +3,14 @@ from PySide6.QtWidgets import (
     QAbstractItemView, QPushButton, QComboBox,
     QLabel, QHBoxLayout, QFileDialog,
 )
-from PySide6.QtCore import Qt, QSignalBlocker
-from typing import Optional
+from PySide6.QtCore import Qt, QSignalBlocker, Signal, QStringListModel, QModelIndex
+from typing import Optional, Dict, List
 # 自訂庫
 from src.classes.ui.numbered_item_delegate import NumberedItemDelegate
 from src.classes.ui.widgets.eliding_button import ElidingButton
+from src.classes.ui.widgets.custom_comic_list import CustomComicList
 from src.translations import TR
 from src.signal_bus import SIGNAL_BUS
-
 
 class ComicListView(QWidget):
     """漫畫列表側顯示
@@ -56,13 +56,7 @@ class ComicListView(QWidget):
         info_layout.addWidget(self.info_label, stretch= 7)
 
         # 漫畫列表
-        self.comic_list = QListView()
-        # self.comic_list.setModel(self.comic_list_model)
-        self.comic_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)  # 多選
-        self.comic_list.setDragEnabled(True)           # 可拖曳
-        self.comic_list.setAcceptDrops(True)           # 接受拖曳
-        self.comic_list.setDropIndicatorShown(True)    # 顯示放置指示
-        self.comic_list.setDragDropMode(QListView.DragDropMode.InternalMove)  # 僅允許內部拖曳
+        self.comic_list = CustomComicList()
         ## 行號
         delegate = NumberedItemDelegate()
         self.comic_list.setItemDelegate(delegate)
@@ -81,6 +75,10 @@ class ComicListView(QWidget):
     def signal_connection(self):
         """信號連接
         """
+        # 漫畫選擇
+        self.comic_list.selectionChangedSignal.connect(
+            lambda comic: SIGNAL_BUS.uiSend.selectComic.emit(comic)
+        )
         # 選擇漫畫資料夾
         self.comic_path_button.pressed.connect(self.selectComicFolder)
         # 語言刷新

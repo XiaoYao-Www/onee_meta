@@ -4,6 +4,7 @@ class _UISendSignals(QObject):
     """UI 發送操作訊號
     """
     selectComicFolder = Signal(str)
+    selectComic = Signal(dict)
     start = Signal()
 
     def __init__(self):

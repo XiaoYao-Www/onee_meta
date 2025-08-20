@@ -1,8 +1,9 @@
-from PySide6.QtCore import QObject, QTranslator
+from PySide6.QtCore import QObject, QTranslator, QModelIndex
 from PySide6.QtWidgets import QApplication
 from typing import List
 # 自訂庫
 from src.model.main_model import MainModel
+from src.classes.data.comic_info_data import ComicInfoData
 from src.view.main_view import MainView
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
@@ -28,6 +29,7 @@ class MainController(QObject):
         """
         # 應用功能
         SIGNAL_BUS.uiSend.selectComicFolder.connect(self.selectComicFolder) # 選擇漫畫資料夾
+        SIGNAL_BUS.uiSend.selectComic.connect(self.selectComic) # 漫畫選擇
         # App設定
         SIGNAL_BUS.appSetting.fontSizeChanged.connect(self.changeFontSize) # 字體大小切換
         SIGNAL_BUS.appSetting.imageExtChanged.connect(self.changeImageExt) # 圖片附檔名設定
@@ -38,6 +40,31 @@ class MainController(QObject):
 
     ###### 應用功能
 
+    def selectComic(self, comic: dict[str, QModelIndex]) -> None:
+        """漫畫選擇
+
+        Args:
+            comic (dict[str, QModelIndex]): 漫畫
+        """
+        view = self.view.right_widget
+        self.model.appStore.set("comic_select", comic) # 儲存選擇
+        # 切換tab顯示狀態
+        if len(comic) < 1:
+            # 小於1，直接攔截
+            view.tabs.setTabVisible(view.index_info_editor_tab, False)
+            return
+        changeVisible = view.tabs.isTabVisible(view.index_info_editor_tab)
+        if not changeVisible:
+            view.tabs.setTabVisible(view.index_info_editor_tab, True)
+            view.tabs.setCurrentIndex(view.index_info_editor_tab)
+        # 取得漫畫資料
+        comic_info_list: List[ComicInfoData] = [
+            self.model.comicStore.get(comicName) for comicName in comic.keys()
+        ]
+        # 設置編輯器顯示
+        view.info_editor_tab.setComicInfoData(comic_info_list)
+
+
     def selectComicFolder(self, folder: str) -> None:
         """選擇漫畫資料夾
 
@@ -45,10 +72,11 @@ class MainController(QObject):
             folder (str): 資料夾路徑
         """
         self.view.loading.show() # 顯示處理中
-        self.model.appStore.set("comic_folder_path", folder)
-        self.view.left_widget.comic_path_button.setText(folder)
-        self.view.left_widget.comic_path_button.setToolTip(folder)
-        self.model.readComicFolder(folder)
+        self.model.appStore.set("comic_folder_path", folder) # 儲存設定
+        self.view.left_widget.comic_path_button.setText(folder) # 改換按鈕文字
+        self.view.left_widget.comic_path_button.setToolTip(folder) # 改換按鈕提示
+        self.model.readComicFolder(folder) # 呼叫 model 讀取
+        self.view.left_widget.comic_list.setComicList(self.model.appStore.get("comic_list", [])) # 設定顯示列表
         self.view.loading.close() # 關閉處理中
 
     ###### 應用設定

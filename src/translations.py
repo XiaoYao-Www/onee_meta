@@ -47,7 +47,7 @@ class _tr:
             "允許檔案：": LazyStr("允許檔案：", "ui_app_setting_tab"),
             "語言選擇：": LazyStr("語言選擇：", "ui_app_setting_tab"),
             # info_editor_tab
-            "輸入keep保留原值": LazyStr("輸入keep保留原值", "ui_info_editor_tab"),
+            "輸入{keep}保留原值": LazyStr("輸入{keep}保留原值", "ui_info_editor_tab"),
         }
         ## 漫畫資訊編輯欄位設定
         self._INFO_EDITOR_TAB_CONFIG = {
