@@ -75,6 +75,8 @@ class OperationArea(QWidget):
         """
         # 切換開始按鈕顯示狀態
         self.tabs.currentChanged.connect(lambda _: self.changeStartButtonVisible())
+        # 開始按鈕
+        self.start_button.clicked.connect(lambda _: SIGNAL_BUS.uiSend.start.emit())
         # 語言刷新
         # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi) 
 

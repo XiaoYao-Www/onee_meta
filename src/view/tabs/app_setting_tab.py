@@ -92,9 +92,16 @@ class AppSettingTab(QWidget):
     def signal_connection(self):
         """訊號連接
         """
+        # 字體大小設定
+        self.font_size_spin.valueChanged.connect(lambda size: SIGNAL_BUS.appSetting.fontSizeChanged.emit(size))
+        # 圖片副檔名設定
+        self.image_extension_edit.textChanged.connect(self.setting_image_extension)
+        # 允許檔案設定
+        self.allow_files_edit.textChanged.connect(self.setting_allow_file)
+        # 修改語言
+        self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.appSetting.langChanged.emit(lang))
         # 語言刷新
         # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi)
-        pass
 
     def functional_construction(self):
         """功能架構
@@ -102,6 +109,8 @@ class AppSettingTab(QWidget):
         pass
 
     ### 功能函式 ###
+
+    ###### UI 改變
 
     def font_size_changed_display(self, font_size: int) -> None:
         """字體大小變換顯示
@@ -138,6 +147,28 @@ class AppSettingTab(QWidget):
         """
         with QSignalBlocker(self.lang_select_combo):
             self.lang_select_combo.setCurrentText(selectedLang)
+
+    ###### 設定修改
+
+    def setting_image_extension(self, extStr: str) -> None:
+        """修改圖片副檔名設定
+
+        Args:
+            extStr (str): 副檔名字串
+        """
+        ext_list = [item.strip() for item in extStr.split(',')]
+        SIGNAL_BUS.appSetting.imageExtChanged.emit(ext_list)
+
+    def setting_allow_file(self, fileStr: str) -> None:
+        """修改允許檔案
+
+        Args:
+            fileStr (str): 允許檔案字串
+        """
+        file_list = [item.strip() for item in fileStr.split(',')]
+        SIGNAL_BUS.appSetting.allowFileChanged.emit(file_list)
+
+    ###### 其它
 
     def retranslateUi(self):
         """語言刷新
