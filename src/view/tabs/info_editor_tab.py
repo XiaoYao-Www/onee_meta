@@ -103,8 +103,7 @@ class InfoEditorTab(QWidget):
     ### 功能函式 ###
 
     def setComicInfoData(self, comicData: List[ComicInfoData]) -> None:
-        """
-        多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
+        """ 多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
         """
         self.updating_fields = True
         try:
@@ -145,6 +144,47 @@ class InfoEditorTab(QWidget):
                         editor.setText(display_val)
         finally:
             self.updating_fields = False
+
+    def getComicInfoData(self) -> ComicInfoData:
+        """ 取得目前編輯器中的值
+            不回傳鍵 => keep
+            回傳 "" => clear
+            回傳值 => value
+        """
+        result: ComicInfoData = {
+            "nsmap": {},
+            "fields": {
+                "base": {}
+            }
+        }
+        for section, fields in infoEditorTabConfig.items():
+            for field_key, field_cfg in fields.items():
+                info_key = field_cfg["info_key"]
+                editor = self.editors.get(info_key)
+                if isinstance(editor, QComboBox):
+                    val = editor.currentText()
+                    if val == "{keep}":
+                        continue
+                elif isinstance(editor, QTextEdit):
+                    val = editor.toPlainText()
+                    if val == "{keep}":
+                        continue
+                elif isinstance(editor, SmartIntegerField):
+                    state = editor.get_state()
+                    if state == "preserve":
+                        continue
+                    elif state == "clear":
+                        val = ""
+                    else:
+                        val = str(editor.value())
+                elif isinstance(editor, QLineEdit):
+                    val = editor.text()
+                    if val == "{keep}":
+                        continue
+                else:
+                    continue
+                result["fields"]["base"][info_key] = val
+        return result
 
     def retranslateUi(self):
         """ UI 語言刷新 """

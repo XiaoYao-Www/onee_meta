@@ -102,3 +102,93 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
             comic_metadata_cache[rel_path] = parsed
 
     return comic_metadata_cache
+
+def writeComicInfoData(comicPath: str, data: ComicInfoData) -> bool:
+    """寫入漫畫資訊
+
+    Args:
+        comicPath (str): 漫畫絕對路徑
+        data (ComicInfoData): 資料
+
+    Returns:
+        bool: 成功與否
+    """
+    if os.path.isdir(comicPath):
+        return writeComicInfoData_dir(comicPath, data)
+    elif os.path.isfile(comicPath) and comicPath.lower().endswith(compressionComicExt):
+        return writeComicInfoData_zip(comicPath, data)
+    else:
+        return False
+
+def writeComicInfoData_dir(comicPath: str, data: ComicInfoData) -> bool:
+    """寫入漫畫資訊_資料夾
+
+    Args:
+        comicPath (str): 漫畫絕對路徑
+        data (ComicInfoData): 資料
+
+    Returns:
+        bool: 成功與否
+    """
+    temp_zip_path = comicPath + ".tmp"
+
+    try:
+        with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
+            # 先寫入 ComicInfo.xml
+            zout.writestr("ComicInfo.xml", data2Xml(data))
+
+            # 走訪整個資料夾結構
+            for root, _, files in os.walk(comicPath):
+                for file in files:
+                    if file.lower() == "comicinfo.xml":
+                        continue  # 跳過原本的 ComicInfo.xml
+
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, comicPath)
+
+                    zout.write(full_path, arcname=rel_path)
+
+        os.replace(temp_zip_path, comicPath + ".cbz")
+        return True
+
+    except Exception as e:
+        if os.path.exists(temp_zip_path):
+            os.remove(temp_zip_path)
+        return False
+    
+def writeComicInfoData_zip(comicPath: str, data: ComicInfoData) -> bool:
+    """寫入漫畫資訊_壓縮檔
+
+    Args:
+        comicPath (str): 漫畫絕對路徑
+        data (ComicInfoData): 資料
+
+    Returns:
+        bool: 成功與否
+    """
+    temp_zip_path = comicPath + ".tmp"
+
+    try:
+        with zipfile.ZipFile(comicPath, 'r') as zin, zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
+            original_path = data.get("original_path", "ComicInfo.xml")
+            # 寫入 ComicInfo.xml
+            zout.writestr(original_path, data2Xml(data))
+
+            for item in zin.infolist():
+                if item.filename.lower().endswith("comicinfo.xml"):
+                    continue
+
+                with zin.open(item) as f:
+                    zout.writestr(item.filename, f.read())
+
+        # 移除舊檔案，改名新檔案
+        if os.path.exists(comicPath):
+            os.remove(comicPath)
+        cbz_path = os.path.splitext(comicPath)[0] + ".cbz"
+        os.replace(temp_zip_path, cbz_path)
+        return True
+
+    except Exception as e:
+        if os.path.exists(temp_zip_path):
+            os.remove(temp_zip_path)
+        return False
