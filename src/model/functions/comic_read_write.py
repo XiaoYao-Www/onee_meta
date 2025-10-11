@@ -1,19 +1,25 @@
+#####
+# 漫畫檔案讀寫
+#####
 import os
 from typing import List, Dict, Optional
 import zipfile
 # 自訂庫
-from src.classes.data.comic_info_data import ComicInfoData
+from src.classes.model.comic_data import ComicData, XmlComicInfo
+from src.classes.model.comic_editting_data import ComicEdittingData
+from src.model.functions.uuid import newUUID4
 from src.app_config import compressionComicExt
-from src.model.functions.comic_info_process import xml2Data, data2Xml
+from model.functions.comic_data_process import xml2Data, data2Xml
 
-def readComicInfoData(comicPath: str) -> ComicInfoData:
-    """讀取漫畫的資訊資料
+
+def readXmlComicInfo(comicPath: str) -> XmlComicInfo:
+    """讀取封裝漫畫的資訊資料
 
     Args:
         comicPath (str): 漫畫路徑
 
     Returns:
-        ComicInfoData: 漫畫資料
+        XmlComicInfo: 漫畫資料
     """
     try:
         with zipfile.ZipFile(comicPath, 'r') as zf:
@@ -40,7 +46,7 @@ def readComicInfoData(comicPath: str) -> ComicInfoData:
             "fields": {},
         }
 
-def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) -> Dict[str, ComicInfoData]:
+def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) -> Dict[str, ComicEdittingData]:
     """讀取漫畫資料夾
 
     Args:
@@ -49,9 +55,9 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
         allowFile (List[str]): 允許檔案
 
     Returns:
-        Dict[str, ComicInfoData]: 資料字典
+        Dict[str, ComicEdittingData]: 資料字典
     """
-    comic_metadata_cache: Dict[str, ComicInfoData] = {}
+    comic_data_cache: Dict[str, ComicEdittingData] = {}
 
     if not os.path.isdir(folderPath):
         return {}
@@ -72,7 +78,14 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 # 壓縮檔
                 rel_path = os.path.relpath(os.path.join(root, f), folderPath)
                 full_path = os.path.join(folderPath, rel_path)
-                comic_metadata_cache[rel_path] = readComicInfoData(full_path)
+                new_uuid4 = newUUID4(set(comic_data_cache.keys()))
+                comic_data_cache[new_uuid4] = {
+                    "uuid": new_uuid4,
+                    "original_data": {
+                        "comic_path": rel_path,
+                        "xml_comic_info": readXmlComicInfo(full_path)
+                    }
+                }
                 folder_is_comic = False
             elif f_lower.endswith(tuple(imgExt)):
                 # 圖片檔
@@ -93,102 +106,109 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
             rel_path = os.path.relpath(root, folderPath)
             if independent_comic_info_path != "":
                 with open(independent_comic_info_path, "rb") as f:
-                    parsed: ComicInfoData = xml2Data(f.read())
+                    parsed: XmlComicInfo = xml2Data(f.read())
             else:
-                parsed: ComicInfoData = {
+                parsed: XmlComicInfo = {
                     "nsmap": {},
                     "fields": {},
                 }
-            comic_metadata_cache[rel_path] = parsed
+            new_uuid4 = newUUID4()
+            comic_data_cache[new_uuid4] = {
+                "uuid": new_uuid4,
+                "original_data": {
+                    "comic_path": rel_path,
+                    "xml_comic_info": parsed
+                }
+            }
 
-    return comic_metadata_cache
+    return comic_data_cache
 
-def writeComicInfoData(comicPath: str, data: ComicInfoData) -> bool:
-    """寫入漫畫資訊
+# def writeComicInfoData(comicPath: str, data: ComicInfoData) -> bool:
+#     """寫入漫畫資訊
 
-    Args:
-        comicPath (str): 漫畫絕對路徑
-        data (ComicInfoData): 資料
+#     Args:
+#         comicPath (str): 漫畫絕對路徑
+#         data (ComicInfoData): 資料
 
-    Returns:
-        bool: 成功與否
-    """
-    if os.path.isdir(comicPath):
-        return writeComicInfoData_dir(comicPath, data)
-    elif os.path.isfile(comicPath) and comicPath.lower().endswith(compressionComicExt):
-        return writeComicInfoData_zip(comicPath, data)
-    else:
-        return False
+#     Returns:
+#         bool: 成功與否
+#     """
+#     if os.path.isdir(comicPath):
+#         return writeComicInfoData_dir(comicPath, data)
+#     elif os.path.isfile(comicPath) and comicPath.lower().endswith(compressionComicExt):
+#         return writeComicInfoData_zip(comicPath, data)
+#     else:
+#         return False
 
-def writeComicInfoData_dir(comicPath: str, data: ComicInfoData) -> bool:
-    """寫入漫畫資訊_資料夾
+# def writeComicInfoData_dir(comicPath: str, data: ComicInfoData) -> bool:
+#     """寫入漫畫資訊_資料夾
 
-    Args:
-        comicPath (str): 漫畫絕對路徑
-        data (ComicInfoData): 資料
+#     Args:
+#         comicPath (str): 漫畫絕對路徑
+#         data (ComicInfoData): 資料
 
-    Returns:
-        bool: 成功與否
-    """
-    temp_zip_path = comicPath + ".tmp"
+#     Returns:
+#         bool: 成功與否
+#     """
+#     temp_zip_path = comicPath + ".tmp"
 
-    try:
-        with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
-            # 先寫入 ComicInfo.xml
-            zout.writestr("ComicInfo.xml", data2Xml(data))
+#     try:
+#         with zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
+#             # 先寫入 ComicInfo.xml
+#             zout.writestr("ComicInfo.xml", data2Xml(data))
 
-            # 走訪整個資料夾結構
-            for root, _, files in os.walk(comicPath):
-                for file in files:
-                    if file.lower() == "comicinfo.xml":
-                        continue  # 跳過原本的 ComicInfo.xml
+#             # 走訪整個資料夾結構
+#             for root, _, files in os.walk(comicPath):
+#                 for file in files:
+#                     if file.lower() == "comicinfo.xml":
+#                         continue  # 跳過原本的 ComicInfo.xml
 
-                    full_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(full_path, comicPath)
+#                     full_path = os.path.join(root, file)
+#                     rel_path = os.path.relpath(full_path, comicPath)
 
-                    zout.write(full_path, arcname=rel_path)
+#                     zout.write(full_path, arcname=rel_path)
 
-        os.replace(temp_zip_path, comicPath + ".cbz")
-        return True
+#         os.replace(temp_zip_path, comicPath + ".cbz")
+#         return True
 
-    except Exception as e:
-        if os.path.exists(temp_zip_path):
-            os.remove(temp_zip_path)
-        return False
+#     except Exception as e:
+#         if os.path.exists(temp_zip_path):
+#             os.remove(temp_zip_path)
+#         return False
     
-def writeComicInfoData_zip(comicPath: str, data: ComicInfoData) -> bool:
-    """寫入漫畫資訊_壓縮檔
+# def writeComicInfoData_zip(comicPath: str, data: ComicInfoData) -> bool:
+#     """寫入漫畫資訊_壓縮檔
 
-    Args:
-        comicPath (str): 漫畫絕對路徑
-        data (ComicInfoData): 資料
+#     Args:
+#         comicPath (str): 漫畫絕對路徑
+#         data (ComicInfoData): 資料
 
-    Returns:
-        bool: 成功與否
-    """
-    temp_zip_path = comicPath + ".tmp"
+#     Returns:
+#         bool: 成功與否
+#     """
+#     temp_zip_path = comicPath + ".tmp"
 
-    try:
-        with zipfile.ZipFile(comicPath, 'r') as zin, zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
-            original_path = data.get("original_path", "ComicInfo.xml")
-            # 寫入 ComicInfo.xml
-            zout.writestr(original_path, data2Xml(data))
+#     try:
+#         with zipfile.ZipFile(comicPath, 'r') as zin, zipfile.ZipFile(temp_zip_path, 'w', zipfile.ZIP_STORED) as zout:
+#             original_path = data.get("original_path", "ComicInfo.xml")
+#             # 寫入 ComicInfo.xml
+#             zout.writestr(original_path, data2Xml(data))
 
-            for item in zin.infolist():
-                if item.filename.lower().endswith("comicinfo.xml"):
-                    continue
+#             for item in zin.infolist():
+#                 if item.filename.lower().endswith("comicinfo.xml"):
+#                     continue
 
-                with zin.open(item) as f:
-                    zout.writestr(item.filename, f.read())
+#                 with zin.open(item) as f:
+#                     zout.writestr(item.filename, f.read())
 
-        # 移除舊檔案，改名新檔案
-        if os.path.exists(comicPath):
-            os.remove(comicPath)
-        cbz_path = os.path.splitext(comicPath)[0] + ".cbz"
-        os.replace(temp_zip_path, cbz_path)
-        return True
+#         # 移除舊檔案，改名新檔案
+#         if os.path.exists(comicPath):
+#             os.remove(comicPath)
+#         cbz_path = os.path.splitext(comicPath)[0] + ".cbz"
+#         os.replace(temp_zip_path, cbz_path)
+#         return True
 
-    except Exception as e:
-        if os.path.exists(temp_zip_path):
-            os.remove(temp_zip_path)
-        return False
+#     except Exception as e:
+#         if os.path.exists(temp_zip_path):
+#             os.remove(temp_zip_path)
+#         return False

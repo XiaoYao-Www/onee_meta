@@ -1,14 +1,11 @@
-#####
-# 主model
-#####
 import json
 from typing import Any, Optional, List, Dict
 import os
 from pathlib import Path
 # 自訂庫
 from src.app_config import appSettingJsonPath, translationFilePath
-from src.classes.model.data_store import DataStore
-from src.classes.model.comic_editting_data import ComicEdittingData
+from src.classes.data.data_store import DataStore
+from src.classes.data.comic_info_data import ComicInfoData
 from src.model.functions.comic_read_write import readComicFolder
 
 class MainModel():
@@ -35,15 +32,16 @@ class MainModel():
                 ".nomedia",
             ]),
         })
-        ## 運行時資料儲存
-        self.runningStore = DataStore()
-        self.runningStore.update({
+        ## 應用資料儲存
+        self.appStore = DataStore()
+        self.appStore.update({
             "translation_files": translation_files, # 翻譯檔案字典
             "comic_folder_path": "", # 漫畫資料夾路徑
-            "comic_uuid_list": [], # 漫畫UUID列表，用於ListView
+            "comic_list": [], # 漫畫列表，用於顯示排序
+            "comic_select": {}, # 儲存選中的漫畫
         })
         ## 漫畫資料儲存
-        self.comicDataStore = DataStore()
+        self.comicStore = DataStore()
         
         # 功能綁定
         self.appSetting.subscribe(self.saveAppSetting) # 綁定設定修改
@@ -56,21 +54,18 @@ class MainModel():
         """載入漫畫資料夾內容
 
         Args:
-            comicFolderPath (str): 資料夾路徑(絕對)
+            comicFolderPath (str): 資料夾路徑
         """
-        # 設定漫畫資料夾路徑
-        self.runningStore.set("comic_folder_path", comicFolderPath)
-        # 讀取漫畫資料夾
-        comic_editting_data: Dict[str, ComicEdittingData] = readComicFolder(
+        comic_editting_data: Dict[str, ComicInfoData] = readComicFolder(
             comicFolderPath,
             self.appSetting.get("image_exts", []),
             self.appSetting.get("allow_files", []),
         )
         # 資料儲存
-        self.comicDataStore.clear()
-        self.comicDataStore.update(comic_editting_data)
+        self.comicStore.clear()
+        self.comicStore.update(comic_editting_data)
         # 漫畫列表
-        self.runningStore.set("comic_uuid_list", list(comic_editting_data.keys()))
+        self.appStore.set("comic_list", list(comic_metadata.keys()))
 
     ###### 應用設定檔
 

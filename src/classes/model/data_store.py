@@ -1,3 +1,6 @@
+#####
+# 執行時數據儲存類
+#####
 import threading
 from typing import Any, Dict, Optional, Set, Callable, TypeVar
 

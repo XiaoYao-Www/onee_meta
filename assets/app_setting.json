@@ -1,15 +1,2 @@
 {
-    "font_size": 10,
-    "lang": "",
-    "image_exts": [
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp",
-        ".bmp",
-        ".gif"
-    ],
-    "allow_files": [
-        ".nomedia"
-    ]
 }

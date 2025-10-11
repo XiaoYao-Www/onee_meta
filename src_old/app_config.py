@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QTextEdit, QComboBox
 )
 # 自訂庫
-from src.classes.view.widgets.smart_integer_field import SmartIntegerField
+from src.classes.ui.widgets.smart_integer_field import SmartIntegerField
 
 # app 設定檔路徑
 appSettingJsonPath = "assets/app_setting.json"

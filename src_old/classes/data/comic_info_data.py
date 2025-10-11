@@ -1,10 +1,7 @@
 from typing import TypedDict, List, Dict, Union, NotRequired
 
 
-class ComicInfoData(TypedDict):
-    """漫畫資料格式
-    """
-
+class XmlComicInfo(TypedDict):
     """
         原 ComicInfo.xml 所在相對路徑
     """
@@ -39,3 +36,17 @@ class ComicInfoData(TypedDict):
                     Union[str, None]
                 ]
             ]
+
+class ComicInfoData(TypedDict):
+    """漫畫資料格式
+    """
+
+    """
+        漫畫路徑
+    """
+    comic_path: str
+
+    """
+        Xml資料
+    """
+    xml_comic_info: XmlComicInfo

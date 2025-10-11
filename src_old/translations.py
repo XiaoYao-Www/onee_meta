@@ -1,10 +1,7 @@
-#####
-# 翻譯主控器
-#####
 from PySide6.QtCore import QCoreApplication
 from types import MappingProxyType
 # 自訂庫
-from src.classes.view.lazy_str import LazyStr
+from src.classes.ui.lazy_str import LazyStr
 
 
 # 翻譯類型
