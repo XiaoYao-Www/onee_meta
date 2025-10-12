@@ -6,7 +6,7 @@ from PySide6.QtCore import QCoreApplication
 class LazyStr():
     """延緩翻譯字符串
     """
-    def __init__(self, text, context="XiaoYao"):
+    def __init__(self, text:str, context="XiaoYao"):
         self.context = context
         self.text = text
 

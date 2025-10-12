@@ -10,8 +10,27 @@ from src.classes.view.lazy_str import LazyStr
 # 翻譯類型
 class _tr:
     def __init__(self):
-        # 翻譯定義
-        ## UI 固定字串
+        #####
+        # 主view
+        #####
+        self._MAIN_VIEW = {
+            "Onee Meta": LazyStr("Onee Meta", "ui_main_view"),
+            "處理中": LazyStr("處理中...", "ui_main_view"),
+        }
+
+        self._COMIC_LIST_VIEW = {
+            "選擇漫畫資料夾路徑": LazyStr("選擇漫畫資料夾路徑", "comic_list_view"),
+            "手動": LazyStr("手動", "comic_list_view"),
+            "檔名": LazyStr("檔名", "comic_list_view"),
+            "{selected} / {total} 本漫畫": LazyStr("{selected} / {total} 本漫畫", "comic_list_view"),
+            "選擇漫畫資料夾": LazyStr("選擇漫畫資料夾", "comic_list_view"),
+        }
+
+        self._MAIN_CONTROLLER = {
+            "設定錯誤": LazyStr("設定錯誤", "main_controller"),
+            "沒有目標語言檔案": LazyStr("沒有目標語言檔案", "main_controller"),
+        }
+
         self._UI_CONSTANTS = {
             # main_view
             "Onee Meta": LazyStr("Onee Meta", "ui_main_view"),
@@ -103,10 +122,26 @@ class _tr:
         }
 
         # 固定
+        self._MAIN_VIEW = MappingProxyType(self._MAIN_VIEW)
+        self._COMIC_LIST_VIEW = MappingProxyType(self._COMIC_LIST_VIEW)
+        self._MAIN_CONTROLLER = MappingProxyType(self._MAIN_CONTROLLER)
+
         self._UI_CONSTANTS = MappingProxyType(self._UI_CONSTANTS)
         self._INFO_EDITOR_TAB_CONFIG = MappingProxyType(self._INFO_EDITOR_TAB_CONFIG)
 
     # 提取器
+    @property
+    def MAIN_VIEW(self):
+        return self._MAIN_VIEW
+    
+    @property
+    def COMIC_LIST_VIEW(self):
+        return self._COMIC_LIST_VIEW
+    
+    @property
+    def MAIN_CONTROLLER(self):
+        return self._MAIN_CONTROLLER
+
     @property
     def UI_CONSTANTS(self):
         return self._UI_CONSTANTS

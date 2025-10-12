@@ -9,7 +9,7 @@ from src.classes.model.comic_data import ComicData, XmlComicInfo
 from src.classes.model.comic_editting_data import ComicEdittingData
 from src.model.functions.uuid import newUUID4
 from src.app_config import compressionComicExt
-from model.functions.comic_data_process import xml2Data, data2Xml
+from src.model.functions.comic_data_process import xml2Data, data2Xml
 
 
 def readXmlComicInfo(comicPath: str) -> XmlComicInfo:

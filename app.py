@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator
 from PySide6.QtGui import QIcon
 # 自訂庫
-from src.app_config import appIconPath
+import src.app_config as APP_CONFIG
 from src.model.main_model import MainModel
 from src.view.main_view import MainView
 from src.controller.main_controller import MainController
@@ -11,14 +11,14 @@ from src.controller.main_controller import MainController
 if __name__ == "__main__":
     # 1. 應用初始化
     application = QApplication(sys.argv)
-    application.setWindowIcon(QIcon(appIconPath))
+    application.setWindowIcon(QIcon(APP_CONFIG.appIconPath))
 
     # 2. 資源初始化
     model = MainModel()
     translator = QTranslator()
 
     # 3. MVC 組裝
-    view = MainView(model) # 傳入的設定為直接引用，應避免修改。
+    view = MainView()
     controller = MainController(
         model=model,
         view=view,
