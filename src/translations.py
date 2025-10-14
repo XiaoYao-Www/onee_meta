@@ -31,6 +31,10 @@ class _tr:
             "沒有目標語言檔案": LazyStr("沒有目標語言檔案", "main_controller"),
         }
 
+        self._OPERATION_AREA = {
+            "儲存編輯": LazyStr("儲存編輯", "operation_area")
+        }
+
         self._UI_CONSTANTS = {
             # main_view
             "Onee Meta": LazyStr("Onee Meta", "ui_main_view"),
@@ -125,6 +129,7 @@ class _tr:
         self._MAIN_VIEW = MappingProxyType(self._MAIN_VIEW)
         self._COMIC_LIST_VIEW = MappingProxyType(self._COMIC_LIST_VIEW)
         self._MAIN_CONTROLLER = MappingProxyType(self._MAIN_CONTROLLER)
+        self._OPERATION_AREA = MappingProxyType(self._OPERATION_AREA)
 
         self._UI_CONSTANTS = MappingProxyType(self._UI_CONSTANTS)
         self._INFO_EDITOR_TAB_CONFIG = MappingProxyType(self._INFO_EDITOR_TAB_CONFIG)
@@ -141,6 +146,10 @@ class _tr:
     @property
     def MAIN_CONTROLLER(self):
         return self._MAIN_CONTROLLER
+    
+    @property
+    def OPERATION_AREA(self):
+        return self._OPERATION_AREA
 
     @property
     def UI_CONSTANTS(self):

@@ -87,7 +87,7 @@ class MainController(QObject):
         self.view.left_widget.comic_path_button.setText(folder) # 改換按鈕文字
         self.view.left_widget.comic_path_button.setToolTip(folder) # 改換按鈕提示
         self.model.readComicFolder(folder) # 呼叫 model 讀取
-        self.view.left_widget.changeInfoLabel(total=len(self.model.runningStore.get("comic_uuid_list", []))) # 設置顯示資料
+        self.view.left_widget.changeInfoLabel(select=0 ,total=len(self.model.runningStore.get("comic_uuid_list", []))) # 設置顯示資料
         self.view.loading.close() # 關閉處理中
 
     # def startProcess(self) -> None:

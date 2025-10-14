@@ -5,6 +5,7 @@ class _UISendSignals(QObject):
     """
     selectComicFolder = Signal(str)
     comicListSelected = Signal(list)
+    startProcess = Signal()
 
     def __init__(self):
         super().__init__()

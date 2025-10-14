@@ -12,6 +12,7 @@ from typing import Optional, Any
 from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONGIF
 from src.view.comic_list_view import ComicListView
+from src.view.operation_area import OperationArea
 from src.classes.view.widgets.loading_dialog import LoadingDialog
 ## 翻譯
 from src.translations import TR
@@ -47,10 +48,10 @@ class MainView(QWidget):
         ## 漫畫列表 
         self.left_widget = ComicListView()
         ## 右邊元件
-        # self.right_widget = OperationArea(model)
+        self.right_widget = OperationArea()
         ## 放入 Splitter
         splitter.addWidget(self.left_widget)
-        # splitter.addWidget(self.right_widget)
+        splitter.addWidget(self.right_widget)
         ## 設定初始大小比例 (像素)
         splitter.setSizes([200, 500])
 
