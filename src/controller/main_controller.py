@@ -1,3 +1,6 @@
+#####
+# 主控制器
+#####
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
 from typing import List

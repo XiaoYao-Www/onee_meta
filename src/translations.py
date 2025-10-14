@@ -32,8 +32,34 @@ class _tr:
         }
 
         self._OPERATION_AREA = {
-            "儲存編輯": LazyStr("儲存編輯", "operation_area")
+            "儲存編輯": LazyStr("儲存編輯", "operation_area"),
+            "關於": LazyStr("關於", "operation_area"),
+            "設定": LazyStr("設定", "operation_area"),
         }
+
+        self._APP_INFO_TAB = {
+            "👻 作者資訊": LazyStr("👻 作者資訊", "app_info_tab"),
+            "自我介紹": LazyStr(
+                "逍遙 ( Xiao Yao )\n"
+                "觀繁花而不與其爭艷\n"
+                "處江湖而不染其煙塵", "app_info_tab"
+            ),
+            "作者 Github 連結": LazyStr("作者 Github 連結", "app_info_tab"),
+            "📦 軟體資訊": LazyStr("📦 軟體資訊", "app_info_tab"),
+            "軟體介紹": LazyStr(
+                "版本: {version}\n"
+                "姐姐大人永遠是對的", "app_info_tab"
+            ),
+            "專案 GitHub 專案連結": LazyStr("專案 GitHub 專案連結", "app_info_tab"),
+        }
+
+        self._APP_SETTING_TAB = {
+            "字體大小：": LazyStr("字體大小：", "app_setting_tab"),
+            "圖片附檔名：": LazyStr("圖片附檔名：", "app_setting_tab"),
+            "允許檔案：": LazyStr("允許檔案：", "app_setting_tab"),
+            "語言選擇：": LazyStr("語言選擇：", "app_setting_tab"),
+        }
+
 
         self._UI_CONSTANTS = {
             # main_view
@@ -130,6 +156,8 @@ class _tr:
         self._COMIC_LIST_VIEW = MappingProxyType(self._COMIC_LIST_VIEW)
         self._MAIN_CONTROLLER = MappingProxyType(self._MAIN_CONTROLLER)
         self._OPERATION_AREA = MappingProxyType(self._OPERATION_AREA)
+        self._APP_INFO_TAB = MappingProxyType(self._APP_INFO_TAB)
+        self._APP_SETTING_TAB = MappingProxyType(self._APP_SETTING_TAB)
 
         self._UI_CONSTANTS = MappingProxyType(self._UI_CONSTANTS)
         self._INFO_EDITOR_TAB_CONFIG = MappingProxyType(self._INFO_EDITOR_TAB_CONFIG)
@@ -150,6 +178,15 @@ class _tr:
     @property
     def OPERATION_AREA(self):
         return self._OPERATION_AREA
+    
+    @property
+    def APP_INFO_TAB(self):
+        return self._APP_INFO_TAB
+    
+    @property
+    def APP_SETTING_TAB(self):
+        return self._APP_SETTING_TAB
+
 
     @property
     def UI_CONSTANTS(self):

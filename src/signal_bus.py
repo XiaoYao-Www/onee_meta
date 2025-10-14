@@ -1,3 +1,6 @@
+#####
+# 訊號線
+#####
 from PySide6.QtCore import QObject, Signal
 
 class _UISendSignals(QObject):

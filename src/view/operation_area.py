@@ -1,3 +1,6 @@
+#####
+# 應用操作區
+#####
 from PySide6.QtWidgets import (
     QWidget, QTabWidget, QPushButton,
     QVBoxLayout,
@@ -8,9 +11,9 @@ from typing import Any, Optional
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
 from src.model.main_model import MainModel
-## tab
-# from src.view.tabs.app_info_tab import AppInfoTab
-# from src.view.tabs.app_setting_tab import AppSettingTab
+# tab
+from src.view.tabs.app_info_tab import AppInfoTab
+from src.view.tabs.app_setting_tab import AppSettingTab
 # from src.view.tabs.info_editor_tab import InfoEditorTab
 
 
@@ -41,16 +44,16 @@ class OperationArea(QWidget):
         """
         # tab面板
         self.tabs = QTabWidget()
-        ## tabs
-        ### 資訊編輯頁
+        # tabs
+        ## 資訊編輯頁
         # self.info_editor_tab = InfoEditorTab()
         # self.index_info_editor_tab = self.tabs.addTab(self.info_editor_tab, TR.UI_CONSTANTS["資訊"]())
-        # ### app設定
-        # self.app_setting_tab = AppSettingTab(model)
-        # self.index_app_setting_tab = self.tabs.addTab(self.app_setting_tab, TR.UI_CONSTANTS["設定"]())
-        # ### app資訊
-        # self.app_info_tab = AppInfoTab()
-        # self.index_app_info_tab = self.tabs.addTab(self.app_info_tab, TR.UI_CONSTANTS["關於"]())
+        ### app設定
+        self.app_setting_tab = AppSettingTab()
+        self.index_app_setting_tab = self.tabs.addTab(self.app_setting_tab, TR.OPERATION_AREA["設定"]())
+        ### app資訊
+        self.app_info_tab = AppInfoTab()
+        self.index_app_info_tab = self.tabs.addTab(self.app_info_tab, TR.OPERATION_AREA["關於"]())
 
         # 執行按鈕
         self.start_button = QPushButton(TR.OPERATION_AREA["儲存編輯"]())
@@ -97,15 +100,5 @@ class OperationArea(QWidget):
     def retranslateUi(self):
         """UI 語言刷新
         """
-        # tabs
-        ## 資訊編輯
-        # self.tabs.setTabText(self.index_info_editor_tab, TR.UI_CONSTANTS["資訊"]())
-        # self.info_editor_tab.retranslateUi()
-        # ## app設定
-        # self.tabs.setTabText(self.index_app_setting_tab, TR.UI_CONSTANTS["設定"]())
-        # self.app_setting_tab.retranslateUi()
-        # ## app資訊
-        # self.tabs.setTabText(self.index_app_info_tab, TR.UI_CONSTANTS["關於"]())
-        # self.app_info_tab.retranslateUi()
         # 啟動按鈕
         self.start_button.setText(TR.OPERATION_AREA["儲存編輯"]())
