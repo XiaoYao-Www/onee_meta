@@ -9,6 +9,11 @@ class _UISendSignals(QObject):
     selectComicFolder = Signal(str)
     comicListSelected = Signal(list)
     startProcess = Signal()
+    # app_setting_tab
+    fontSizeSet = Signal(int)
+    imgExtensionSet = Signal(list)
+    allowFileSet = Signal(list)
+    langChange = Signal(str)
 
     def __init__(self):
         super().__init__()

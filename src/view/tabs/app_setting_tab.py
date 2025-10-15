@@ -89,13 +89,13 @@ class AppSettingTab(QWidget):
         """訊號連接
         """
         # 字體大小設定
-        # self.font_size_spin.valueChanged.connect(lambda size: SIGNAL_BUS.appSetting.fontSizeChanged.emit(size))
+        self.font_size_spin.valueChanged.connect(lambda size: SIGNAL_BUS.uiSend.fontSizeSet.emit(size))
         # 圖片副檔名設定
-        # self.image_extension_edit.textChanged.connect(self.setting_image_extension)
+        self.image_extension_edit.textChanged.connect(self.settingImageExtension)
         # 允許檔案設定
-        # self.allow_files_edit.textChanged.connect(self.setting_allow_file)
+        self.allow_files_edit.textChanged.connect(self.settingAllowFile)
         # 修改語言
-        # self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.appSetting.langChanged.emit(lang))
+        self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.uiSend.langChange.emit(lang))
         # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
@@ -108,7 +108,7 @@ class AppSettingTab(QWidget):
 
     ###### UI 改變
 
-    def font_size_changed_display(self, font_size: int) -> None:
+    def fontSizeChangedDisplay(self, font_size: int) -> None:
         """字體大小變換顯示
 
         Args:
@@ -117,7 +117,7 @@ class AppSettingTab(QWidget):
         with QSignalBlocker(self.font_size_spin):
             self.font_size_spin.setValue(font_size)
 
-    def image_extension_changed_display(self, image_exts: list[str]) -> None:
+    def imageExtensionChangedDisplay(self, image_exts: list[str]) -> None:
         """圖片附檔名變換顯示
 
         Args:
@@ -126,7 +126,7 @@ class AppSettingTab(QWidget):
         with QSignalBlocker(self.image_extension_edit):
             self.image_extension_edit.setText(', '.join(image_exts))
 
-    def allow_files_changed_display(self, allow_files: list[str]) -> None:
+    def allowFilesChangedDisplay(self, allow_files: list[str]) -> None:
         """允許檔案變換顯示
 
         Args:
@@ -135,7 +135,7 @@ class AppSettingTab(QWidget):
         with QSignalBlocker(self.allow_files_edit):
             self.allow_files_edit.setText(', '.join(allow_files))
 
-    def lang_selected_changed_display(self, selectedLang: str) -> None:
+    def langSelectedChangedDisplay(self, selectedLang: str) -> None:
         """語言選擇變換顯示
 
         Args:
@@ -146,23 +146,23 @@ class AppSettingTab(QWidget):
 
     ###### 設定修改
 
-    # def setting_image_extension(self, extStr: str) -> None:
-    #     """修改圖片副檔名設定
+    def settingImageExtension(self, extStr: str) -> None:
+        """修改圖片副檔名設定
 
-    #     Args:
-    #         extStr (str): 副檔名字串
-    #     """
-    #     ext_list = [item.strip() for item in extStr.split(',')]
-    #     SIGNAL_BUS.appSetting.imageExtChanged.emit(ext_list)
+        Args:
+            extStr (str): 副檔名字串
+        """
+        ext_list = [item.strip() for item in extStr.split(',')]
+        SIGNAL_BUS.uiSend.imgExtensionSet.emit(ext_list)
 
-    # def setting_allow_file(self, fileStr: str) -> None:
-    #     """修改允許檔案
+    def settingAllowFile(self, fileStr: str) -> None:
+        """修改允許檔案
 
-    #     Args:
-    #         fileStr (str): 允許檔案字串
-    #     """
-    #     file_list = [item.strip() for item in fileStr.split(',')]
-    #     SIGNAL_BUS.appSetting.allowFileChanged.emit(file_list)
+        Args:
+            fileStr (str): 允許檔案字串
+        """
+        file_list = [item.strip() for item in fileStr.split(',')]
+        SIGNAL_BUS.uiSend.allowFileSet.emit(file_list)
 
     ###### 其它
 

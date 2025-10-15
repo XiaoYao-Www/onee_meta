@@ -32,7 +32,7 @@ class MainView(QWidget):
         self.setWindowTitle(TR.MAIN_VIEW["Onee Meta"]())
         self.setWindowIcon(QIcon(APP_CONGIF.appIconPath))
         self.resize(900, 750)
-        self.change_font_size(10)
+        self.changeFontSize(10)
 
         # 訊號連接
         self.signal_connection()
@@ -66,11 +66,9 @@ class MainView(QWidget):
     def signal_connection(self):
         """信號連接
         """
-        # 設定
-        SIGNAL_BUS.settingChange.fontSize.connect(self.change_font_size)
         # 訊息框
-        SIGNAL_BUS.uiRevice.sendCritical.connect(self.send_critical)
-        SIGNAL_BUS.uiRevice.sendInformation.connect(self.send_information)
+        SIGNAL_BUS.uiRevice.sendCritical.connect(self.sendCritical)
+        SIGNAL_BUS.uiRevice.sendInformation.connect(self.sendInformation)
         # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
@@ -78,7 +76,7 @@ class MainView(QWidget):
 
     ###### 應用設定
 
-    def change_font_size(self, size: int) -> None:
+    def changeFontSize(self, size: int) -> None:
         """更改字型大小
 
         Args:
@@ -96,7 +94,7 @@ class MainView(QWidget):
 
     ###### 傳送訊息框
 
-    def send_critical(self, title: str, text: str) -> None:
+    def sendCritical(self, title: str, text: str) -> None:
         """顯示警告訊息
 
         Args:
@@ -105,7 +103,7 @@ class MainView(QWidget):
         """
         QMessageBox.critical(self, title, text)
 
-    def send_information(self, title: str, text: str) -> None:
+    def sendInformation(self, title: str, text: str) -> None:
         """顯示提示訊息
 
         Args:

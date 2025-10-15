@@ -3,7 +3,7 @@
 #####
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
-from typing import List
+from typing import List, cast
 import os
 # 自訂庫
 from src.model.main_model import MainModel
@@ -28,12 +28,32 @@ class MainController(QObject):
         # 訊號連結
         self.signal_connection()
 
+        # 應用初始化
+        self.application_init()
+
     ### 初始化函式 ###
 
     def application_linkage_structure(self) -> None:
         """應用連結構建
         """
         self.view.left_widget.setListModel(self.model.comicListModel) # 漫畫列表模型
+
+    def application_init(self) -> None:
+        """應用初始化
+        """
+        # 設定選項注入
+        self.view.right_widget.app_setting_tab.lang_select_combo.clear() # 清除選項
+        lang_select_items: list[str] = list(self.model.runningStore.get("translation_files", {}).keys()) # 取得鍵
+        lang_select_items.insert(0, "") # 添加預設選項
+        self.view.right_widget.app_setting_tab.lang_select_combo.addItems(
+            lang_select_items
+        )
+        # 設定初始化
+        self.setAppFontSize(self.model.appSetting.get("font_size", 10)) # 字體大小
+        self.setImageExt(self.model.appSetting.get("image_exts", [])) # 圖片副檔名
+        self.setAllowFile(self.model.appSetting.get("allow_files", [])) # 允許檔案
+        self.changeLang(self.model.appSetting.get("lang", "")) # 翻譯
+
 
     def signal_connection(self) -> None:
         """訊號連接
@@ -42,11 +62,11 @@ class MainController(QObject):
         SIGNAL_BUS.uiSend.selectComicFolder.connect(self.selectComicFolder) # 選擇漫畫資料夾
         # SIGNAL_BUS.uiSend.selectComic.connect(self.selectComic) # 漫畫選擇
         # SIGNAL_BUS.uiSend.start.connect(self.startProcess) # 開始處理
-        # App設定
-        # SIGNAL_BUS.appSetting.fontSizeChanged.connect(self.changeFontSize) # 字體大小切換
-        # SIGNAL_BUS.appSetting.imageExtChanged.connect(self.changeImageExt) # 圖片附檔名設定
-        # SIGNAL_BUS.appSetting.allowFileChanged.connect(self.changeAllowFile) # 允許檔案設定
-        # SIGNAL_BUS.appSetting.langChanged.connect(self.changeLang) # 語言切換
+        # 應用設定
+        SIGNAL_BUS.uiSend.fontSizeSet.connect(self.setAppFontSize) # 字體大小切換
+        SIGNAL_BUS.uiSend.imgExtensionSet.connect(self.setImageExt) # 圖片附檔名設定
+        SIGNAL_BUS.uiSend.allowFileSet.connect(self.setAllowFile) # 允許檔案設定
+        SIGNAL_BUS.uiSend.langChange.connect(self.changeLang) # 語言切換
         # 連接功能
         self.model.comicListModel.listIndexChange = self.comicListIndexChanged # 漫畫排列後選擇
 
@@ -164,30 +184,33 @@ class MainController(QObject):
 
     ###### 應用設定
 
-    def changeAllowFile(self, fileList: List[str]) -> None:
-        """修改允許檔案設定
+    def setAllowFile(self, fileList: List[str]) -> None:
+        """設置允許檔案設定
 
         Args:
             fileList (List[str]): 允許檔案列表
         """
-        self.model.appSetting.set("allow_files", fileList)
+        self.model.appSetting.set("allow_files", fileList) # 修改設定
+        self.view.right_widget.app_setting_tab.allowFilesChangedDisplay(fileList) # 顯示調整
 
-    def changeImageExt(self, extList: List[str]) -> None:
-        """修改圖片副檔名設定
+    def setImageExt(self, extList: List[str]) -> None:
+        """設置圖片副檔名設定
 
         Args:
             extList (List[str]): 副檔名列表
         """
-        self.model.appSetting.set("image_exts", extList)
+        self.model.appSetting.set("image_exts", extList) # 修改設定
+        self.view.right_widget.app_setting_tab.imageExtensionChangedDisplay(extList) # 顯示調整
 
-    def changeFontSize(self, size: int) -> None:
-        """切換字體大小
+    def setAppFontSize(self, size: int) -> None:
+        """設置字體大小
 
         Args:
             size (int): 大小
         """
-        self.model.appSetting.set("font_size", size)
-        self.view.change_font_size(size)
+        self.model.appSetting.set("font_size", size) # 修改設定
+        self.view.changeFontSize(size) # 設定執行
+        self.view.right_widget.app_setting_tab.fontSizeChangedDisplay(size) # 顯示調整
 
     def changeLang(self, langName: str) -> None:
         """切換語言
@@ -203,9 +226,11 @@ class MainController(QObject):
             SIGNAL_BUS.uiRevice.translateUi.emit() # 呼叫刷新
             if langName != "": # 錯誤檢查
                 SIGNAL_BUS.uiRevice.sendCritical.emit(TR.MAIN_CONTROLLER["設定錯誤"](), TR.MAIN_CONTROLLER["沒有目標語言檔案"]())
+            self.view.right_widget.app_setting_tab.langSelectedChangedDisplay("") # 顯示調整
             return
         # 有指定語言檔案
         self.model.appSetting.set("lang", langName) # 儲存設定
         self.translator.load(lang_file) # 加載翻譯器
         self.application.installTranslator(self.translator)
         SIGNAL_BUS.uiRevice.translateUi.emit() # 呼叫刷新
+        self.view.right_widget.app_setting_tab.langSelectedChangedDisplay(langName) # 顯示調整
