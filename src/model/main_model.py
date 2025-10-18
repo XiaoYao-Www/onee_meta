@@ -42,6 +42,7 @@ class MainModel():
             "translation_files": translation_files, # 翻譯檔案字典
             "comic_folder_path": "", # 漫畫資料夾路徑
             "comic_uuid_list": [], # 漫畫UUID列表，用於ListView
+            "selected_comics": [], # 選中的漫畫UUID
         })
         ## 漫畫資料儲存
         self.comicDataStore = DataStore()

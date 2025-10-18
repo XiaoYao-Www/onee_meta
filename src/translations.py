@@ -35,6 +35,7 @@ class _tr:
             "儲存編輯": LazyStr("儲存編輯", "operation_area"),
             "關於": LazyStr("關於", "operation_area"),
             "設定": LazyStr("設定", "operation_area"),
+            "資訊": LazyStr("資訊", "operation_area"),
         }
 
         self._APP_INFO_TAB = {
@@ -58,6 +59,55 @@ class _tr:
             "圖片附檔名：": LazyStr("圖片附檔名：", "app_setting_tab"),
             "允許檔案：": LazyStr("允許檔案：", "app_setting_tab"),
             "語言選擇：": LazyStr("語言選擇：", "app_setting_tab"),
+        }
+
+        self._INFO_EDITOR_TAB = {
+            "書籍資訊": LazyStr("書籍資訊", "info_editor_tab"),
+            "標題": LazyStr("標題", "info_editor_tab"),
+            "系列名稱": LazyStr("系列名稱", "info_editor_tab"),
+            "系列分組": LazyStr("系列分組", "info_editor_tab"),
+            "風格類型": LazyStr("風格類型", "info_editor_tab"),
+            "集數編號": LazyStr("集數編號", "info_editor_tab"),
+            "總集數": LazyStr("總集數", "info_editor_tab"),
+            "卷/冊號": LazyStr("卷/冊號", "info_editor_tab"),
+            "頁數": LazyStr("頁數", "info_editor_tab"),
+            "格式描述": LazyStr("格式描述", "info_editor_tab"),
+            "語言 (ISO 639)": LazyStr("語言 (ISO 639)", "info_editor_tab"),
+            "替代版本": LazyStr("替代版本", "info_editor_tab"),
+            "替代系列名稱": LazyStr("替代系列名稱", "info_editor_tab"),
+            "替代集數": LazyStr("替代集數", "info_editor_tab"),
+            "替代總集數": LazyStr("替代總集數", "info_editor_tab"),
+            "內容摘要": LazyStr("內容摘要", "info_editor_tab"),
+            "簡介": LazyStr("簡介", "info_editor_tab"),
+            "備註": LazyStr("備註", "info_editor_tab"),
+            "評論": LazyStr("評論", "info_editor_tab"),
+            "角色與劇情": LazyStr("角色與劇情", "info_editor_tab"),
+            "登場角色": LazyStr("登場角色", "info_editor_tab"),
+            "主角或主團隊": LazyStr("主角或主團隊", "info_editor_tab"),
+            "故事主軸": LazyStr("故事主軸", "info_editor_tab"),
+            "地點": LazyStr("地點", "info_editor_tab"),
+            "出場團隊": LazyStr("出場團隊", "info_editor_tab"),
+            "內容屬性": LazyStr("內容屬性", "info_editor_tab"),
+            "黑白色彩": LazyStr("黑白色彩", "info_editor_tab"),
+            "是否為漫畫": LazyStr("是否為漫畫", "info_editor_tab"),
+            "年齡分級": LazyStr("年齡分級", "info_editor_tab"),
+            "創作團隊": LazyStr("創作團隊", "info_editor_tab"),
+            "作者": LazyStr("作者", "info_editor_tab"),
+            "畫者 (鉛筆)": LazyStr("畫者 (鉛筆)", "info_editor_tab"),
+            "墨線師": LazyStr("墨線師", "info_editor_tab"),
+            "上色師": LazyStr("上色師", "info_editor_tab"),
+            "字體設計": LazyStr("字體設計", "info_editor_tab"),
+            "封面設計": LazyStr("封面設計", "info_editor_tab"),
+            "編輯": LazyStr("編輯", "info_editor_tab"),
+            "出版資訊": LazyStr("出版資訊", "info_editor_tab"),
+            "出版社": LazyStr("出版社", "info_editor_tab"),
+            "品牌 / 出版系列": LazyStr("品牌 / 出版系列", "info_editor_tab"),
+            "網站": LazyStr("網站", "info_editor_tab"),
+            "出版年": LazyStr("出版年", "info_editor_tab"),
+            "出版月": LazyStr("出版月", "info_editor_tab"),
+            "出版日": LazyStr("出版日", "info_editor_tab"),
+            "掃描資訊": LazyStr("掃描資訊", "info_editor_tab"),
+            "標籤": LazyStr("標籤", "info_editor_tab"),
         }
 
 
@@ -101,55 +151,6 @@ class _tr:
             # info_editor_tab
             "輸入{keep}保留原值": LazyStr("輸入{keep}保留原值", "ui_info_editor_tab"),
         }
-        ## 漫畫資訊編輯欄位設定
-        self._INFO_EDITOR_TAB_CONFIG = {
-            "書籍資訊": LazyStr("書籍資訊", "info_editor_tab_config"),
-            "標題": LazyStr("標題", "info_editor_tab_config"),
-            "系列名稱": LazyStr("系列名稱", "info_editor_tab_config"),
-            "系列分組": LazyStr("系列分組", "info_editor_tab_config"),
-            "風格類型": LazyStr("風格類型", "info_editor_tab_config"),
-            "集數編號": LazyStr("集數編號", "info_editor_tab_config"),
-            "總集數": LazyStr("總集數", "info_editor_tab_config"),
-            "卷/冊號": LazyStr("卷/冊號", "info_editor_tab_config"),
-            "頁數": LazyStr("頁數", "info_editor_tab_config"),
-            "格式描述": LazyStr("格式描述", "info_editor_tab_config"),
-            "語言 (ISO 639)": LazyStr("語言 (ISO 639)", "info_editor_tab_config"),
-            "替代版本": LazyStr("替代版本", "info_editor_tab_config"),
-            "替代系列名稱": LazyStr("替代系列名稱", "info_editor_tab_config"),
-            "替代集數": LazyStr("替代集數", "info_editor_tab_config"),
-            "替代總集數": LazyStr("替代總集數", "info_editor_tab_config"),
-            "內容摘要": LazyStr("內容摘要", "info_editor_tab_config"),
-            "簡介": LazyStr("簡介", "info_editor_tab_config"),
-            "備註": LazyStr("備註", "info_editor_tab_config"),
-            "評論": LazyStr("評論", "info_editor_tab_config"),
-            "角色與劇情": LazyStr("角色與劇情", "info_editor_tab_config"),
-            "登場角色": LazyStr("登場角色", "info_editor_tab_config"),
-            "主角或主團隊": LazyStr("主角或主團隊", "info_editor_tab_config"),
-            "故事主軸": LazyStr("故事主軸", "info_editor_tab_config"),
-            "地點": LazyStr("地點", "info_editor_tab_config"),
-            "出場團隊": LazyStr("出場團隊", "info_editor_tab_config"),
-            "內容屬性": LazyStr("內容屬性", "info_editor_tab_config"),
-            "黑白色彩": LazyStr("黑白色彩", "info_editor_tab_config"),
-            "是否為漫畫": LazyStr("是否為漫畫", "info_editor_tab_config"),
-            "年齡分級": LazyStr("年齡分級", "info_editor_tab_config"),
-            "創作團隊": LazyStr("創作團隊", "info_editor_tab_config"),
-            "作者": LazyStr("作者", "info_editor_tab_config"),
-            "畫者 (鉛筆)": LazyStr("畫者 (鉛筆)", "info_editor_tab_config"),
-            "墨線師": LazyStr("墨線師", "info_editor_tab_config"),
-            "上色師": LazyStr("上色師", "info_editor_tab_config"),
-            "字體設計": LazyStr("字體設計", "info_editor_tab_config"),
-            "封面設計": LazyStr("封面設計", "info_editor_tab_config"),
-            "編輯": LazyStr("編輯", "info_editor_tab_config"),
-            "出版資訊": LazyStr("出版資訊", "info_editor_tab_config"),
-            "出版社": LazyStr("出版社", "info_editor_tab_config"),
-            "品牌 / 出版系列": LazyStr("品牌 / 出版系列", "info_editor_tab_config"),
-            "網站": LazyStr("網站", "info_editor_tab_config"),
-            "出版年": LazyStr("出版年", "info_editor_tab_config"),
-            "出版月": LazyStr("出版月", "info_editor_tab_config"),
-            "出版日": LazyStr("出版日", "info_editor_tab_config"),
-            "掃描資訊": LazyStr("掃描資訊", "info_editor_tab_config"),
-            "標籤": LazyStr("標籤", "info_editor_tab_config"),
-        }
 
         # 固定
         self._MAIN_VIEW = MappingProxyType(self._MAIN_VIEW)
@@ -158,9 +159,9 @@ class _tr:
         self._OPERATION_AREA = MappingProxyType(self._OPERATION_AREA)
         self._APP_INFO_TAB = MappingProxyType(self._APP_INFO_TAB)
         self._APP_SETTING_TAB = MappingProxyType(self._APP_SETTING_TAB)
+        self._INFO_EDITOR_TAB = MappingProxyType(self._INFO_EDITOR_TAB)
 
         self._UI_CONSTANTS = MappingProxyType(self._UI_CONSTANTS)
-        self._INFO_EDITOR_TAB_CONFIG = MappingProxyType(self._INFO_EDITOR_TAB_CONFIG)
 
     # 提取器
     @property
@@ -186,14 +187,14 @@ class _tr:
     @property
     def APP_SETTING_TAB(self):
         return self._APP_SETTING_TAB
+    
+    @property
+    def INFO_EDITOR_TAB(self):
+        return self._INFO_EDITOR_TAB
 
 
     @property
     def UI_CONSTANTS(self):
         return self._UI_CONSTANTS
-    
-    @property
-    def INFO_EDITOR_TAB_CONFIG(self):
-        return self._INFO_EDITOR_TAB_CONFIG
     
 TR = _tr() # 實例化

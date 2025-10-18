@@ -22,10 +22,15 @@ class SmartIntegerField(QLineEdit):
             text (str): 輸入文字
         """
         text = text.strip()
-        if text in "{keep}":
-            self._state = "preserve"
-        elif text == "":
+        if text == "":
             self._state = "clear"
+        elif text == "{keep}":
+            self._state = "preserve"
+        elif text in "{keep}":
+            if self._state == "preserve":
+                self.setValue("")
+            else:
+                self.setValue("{keep}")
         elif text.isdigit():
             if int(text) >= 0:
                 self._state = "value"

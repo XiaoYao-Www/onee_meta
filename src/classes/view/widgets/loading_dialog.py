@@ -12,6 +12,7 @@ class LoadingDialog(QDialog):
             parent (_type_, optional): 父項. Defaults to None.
         """
         super().__init__(parent)
+        self.setWindowTitle("Loading")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)  # 阻止所有操作
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)

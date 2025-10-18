@@ -1,3 +1,6 @@
+#####
+# 資訊編輯頁面
+#####
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QListWidget, QFileDialog, QLineEdit,
@@ -9,9 +12,10 @@ from PySide6.QtCore import Qt
 from typing import Dict, List
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
-from src.app_config import infoEditorTabConfig
-from src.classes.ui.widgets.smart_integer_field import SmartIntegerField
-from src.classes.data.comic_info_data import ComicInfoData
+import src.app_config as APP_CONFIG
+from src.classes.view.widgets.smart_integer_field import SmartIntegerField
+from src.classes.model.comic_data import ComicData, XmlComicInfo
+from src.classes.model.comic_editting_data import ComicEdittingData
 ## 翻譯
 from src.translations import TR
 
@@ -40,8 +44,9 @@ class InfoEditorTab(QWidget):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        for section_key, fields in infoEditorTabConfig.items():
-            toggle_button = QToolButton(text=TR.INFO_EDITOR_TAB_CONFIG[section_key](), checkable=True, checked=False) # type: ignore[attr-defined]
+        # 動態創建UI
+        for section_key, fields in APP_CONFIG.infoEditorTabConfig.items():
+            toggle_button = QToolButton(text=TR.INFO_EDITOR_TAB[section_key](), checkable=True, checked=False) # type: ignore[attr-defined]
             toggle_button.setStyleSheet("QToolButton { border: none; }")
             toggle_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             toggle_button.setArrowType(Qt.ArrowType.RightArrow)
@@ -67,7 +72,7 @@ class InfoEditorTab(QWidget):
 
             for field_key, field_cfg in fields.items():
                 hlayout = QHBoxLayout()
-                label = QLabel(TR.INFO_EDITOR_TAB_CONFIG[field_cfg["label"]]())
+                label = QLabel(TR.INFO_EDITOR_TAB[field_cfg["label"]]())
                 label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop)
                 hlayout.addWidget(label, stretch=1)
                 self.labels[field_cfg["info_key"]] = label
@@ -94,7 +99,7 @@ class InfoEditorTab(QWidget):
         """ 訊號連結 """
         pass
         # 語言刷新
-        # SIGNAL_BUS.ui.retranslateUi.connect(self.retranslateUi)
+        SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
     def functional_construction(self):
         """ 功能建構 """
@@ -102,12 +107,15 @@ class InfoEditorTab(QWidget):
 
     ### 功能函式 ###
 
-    def setComicInfoData(self, comicData: List[ComicInfoData]) -> None:
-        """ 多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
+    def setComicInfoData(self, comicData: List[XmlComicInfo]) -> None:
+        """多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
+
+        Args:
+            comicData (List[XmlComicInfo]): 漫畫資料數據列表
         """
         self.updating_fields = True
         try:
-            for section, fields in infoEditorTabConfig.items():
+            for section, fields in APP_CONFIG.infoEditorTabConfig.items():
                 for field_key, field_cfg in fields.items():
                     info_key = field_cfg["info_key"]
                     values = []
@@ -145,19 +153,22 @@ class InfoEditorTab(QWidget):
         finally:
             self.updating_fields = False
 
-    def getComicInfoData(self) -> ComicInfoData:
-        """ 取得目前編輯器中的值
+    def getComicInfoData(self) -> XmlComicInfo:
+        """取得目前編輯器中的值
             不回傳鍵 => keep
             回傳 "" => clear
             回傳值 => value
+
+        Returns:
+            XmlComicInfo: 漫畫資料數據
         """
-        result: ComicInfoData = {
+        result: XmlComicInfo = {
             "nsmap": {},
             "fields": {
                 "base": {}
             }
         }
-        for section, fields in infoEditorTabConfig.items():
+        for section, fields in APP_CONFIG.infoEditorTabConfig.items():
             for field_key, field_cfg in fields.items():
                 info_key = field_cfg["info_key"]
                 editor = self.editors.get(info_key)
@@ -186,12 +197,15 @@ class InfoEditorTab(QWidget):
                 result["fields"]["base"][info_key] = val
         return result
 
+
+    ### UI介面 ###
+
     def retranslateUi(self):
         """ UI 語言刷新 """
-        for section_key, fields in infoEditorTabConfig.items():
+        for section_key, fields in APP_CONFIG.infoEditorTabConfig.items():
             toggle_button: QToolButton = self.toggle_buttons[section_key]
-            toggle_button.setText(TR.INFO_EDITOR_TAB_CONFIG[section_key]())
+            toggle_button.setText(TR.INFO_EDITOR_TAB[section_key]())
 
             for field_key, field_cfg in fields.items():
                 label: QLabel = self.labels[field_cfg["info_key"]]
-                label.setText(TR.INFO_EDITOR_TAB_CONFIG[field_cfg["label"]]())
+                label.setText(TR.INFO_EDITOR_TAB[field_cfg["label"]]())

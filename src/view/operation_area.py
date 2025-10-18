@@ -14,7 +14,7 @@ from src.model.main_model import MainModel
 # tab
 from src.view.tabs.app_info_tab import AppInfoTab
 from src.view.tabs.app_setting_tab import AppSettingTab
-# from src.view.tabs.info_editor_tab import InfoEditorTab
+from src.view.tabs.info_editor_tab import InfoEditorTab
 
 
 class OperationArea(QWidget):
@@ -44,10 +44,10 @@ class OperationArea(QWidget):
         """
         # tab面板
         self.tabs = QTabWidget()
-        # tabs
-        ## 資訊編輯頁
-        # self.info_editor_tab = InfoEditorTab()
-        # self.index_info_editor_tab = self.tabs.addTab(self.info_editor_tab, TR.UI_CONSTANTS["資訊"]())
+        ## tabs
+        ### 資訊編輯頁
+        self.info_editor_tab = InfoEditorTab()
+        self.index_info_editor_tab = self.tabs.addTab(self.info_editor_tab, TR.OPERATION_AREA["資訊"]())
         ### app設定
         self.app_setting_tab = AppSettingTab()
         self.index_app_setting_tab = self.tabs.addTab(self.app_setting_tab, TR.OPERATION_AREA["設定"]())
@@ -69,8 +69,8 @@ class OperationArea(QWidget):
         self.ui_layout.addWidget(self.start_button)
         self.setLayout(self.ui_layout)
         ## 預設顯示配置
-        # self.tabs.setTabVisible(self.index_info_editor_tab, False)
-        # self.tabs.setCurrentIndex(self.index_app_info_tab)
+        self.tabs.setTabVisible(self.index_info_editor_tab, False)
+        self.tabs.setCurrentIndex(self.index_app_info_tab)
         self.changeStartButtonVisible(False)
 
     def signal_connection(self):
@@ -91,14 +91,20 @@ class OperationArea(QWidget):
         if state != None:
             self.start_button.setVisible(state)
         else:
-            # self.start_button.setVisible(
-            #     not(self.tabs.currentIndex() in [self.index_app_info_tab, self.index_app_setting_tab])
-            # )
-            pass
+            self.start_button.setVisible(
+                not(self.tabs.currentIndex() in [self.index_app_info_tab, self.index_app_setting_tab])
+            )
 
 
     def retranslateUi(self):
         """UI 語言刷新
         """
+        # 分頁標題
+        ## 資訊編輯
+        self.tabs.setTabText(self.index_info_editor_tab, TR.OPERATION_AREA["資訊"]())
+        ## app設定
+        self.tabs.setTabText(self.index_app_setting_tab, TR.OPERATION_AREA["設定"]())
+        ## app資訊
+        self.tabs.setTabText(self.index_app_info_tab, TR.OPERATION_AREA["關於"]())
         # 啟動按鈕
         self.start_button.setText(TR.OPERATION_AREA["儲存編輯"]())

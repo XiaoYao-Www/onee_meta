@@ -10,6 +10,11 @@ from src.model.main_model import MainModel
 from src.view.main_view import MainView
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
+from src.classes.model.comic_data import XmlComicInfo, ComicData
+from src.classes.model.comic_editting_data import ComicEdittingData
+from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
+from src.controller.functions.placeholder_process import XmlDataPlaceholderProcess
+from src.controller.functions.xml_data_process import updataXmlComicInfo
 
 class MainController(QObject):
     """主控制
@@ -60,8 +65,8 @@ class MainController(QObject):
         """
         # 應用功能
         SIGNAL_BUS.uiSend.selectComicFolder.connect(self.selectComicFolder) # 選擇漫畫資料夾
-        # SIGNAL_BUS.uiSend.selectComic.connect(self.selectComic) # 漫畫選擇
-        # SIGNAL_BUS.uiSend.start.connect(self.startProcess) # 開始處理
+        SIGNAL_BUS.uiSend.comicListSelected.connect(self.selectComic) # 漫畫選擇
+        SIGNAL_BUS.uiSend.startProcess.connect(self.startProcess) # 開始處理
         # 應用設定
         SIGNAL_BUS.uiSend.fontSizeSet.connect(self.setAppFontSize) # 字體大小切換
         SIGNAL_BUS.uiSend.imgExtensionSet.connect(self.setImageExt) # 圖片附檔名設定
@@ -74,29 +79,30 @@ class MainController(QObject):
 
     ###### 應用功能
 
-    # def selectComic(self, comic: dict[str, QModelIndex]) -> None:
-    #     """漫畫選擇
+    def selectComic(self, comic: list[int]) -> None:
+        """漫畫選擇
 
-    #     Args:
-    #         comic (dict[str, QModelIndex]): 漫畫
-    #     """
-    #     view = self.view.right_widget
-    #     self.model.appStore.set("comic_select", comic) # 儲存選擇
-    #     # 切換tab顯示狀態
-    #     if len(comic) < 1:
-    #         # 小於1，直接攔截
-    #         view.tabs.setTabVisible(view.index_info_editor_tab, False)
-    #         return
-    #     changeVisible = view.tabs.isTabVisible(view.index_info_editor_tab)
-    #     if not changeVisible:
-    #         view.tabs.setTabVisible(view.index_info_editor_tab, True)
-    #         view.tabs.setCurrentIndex(view.index_info_editor_tab)
-    #     # 取得漫畫資料
-    #     comic_info_list: List[ComicInfoData] = [
-    #         self.model.comicStore.get(comicName) for comicName in comic.keys()
-    #     ]
-    #     # 設置編輯器顯示
-    #     view.info_editor_tab.setComicInfoData(comic_info_list)
+        Args:
+            comic (list[int]): 漫畫
+        """
+        operationArea = self.view.right_widget
+        # 切換tab顯示狀態
+        if len(comic) < 1:
+            # 小於1，直接攔截
+            operationArea.tabs.setTabVisible(operationArea.index_info_editor_tab, False)
+            return
+        changeVisible = operationArea.tabs.isTabVisible(operationArea.index_info_editor_tab)
+        if not changeVisible:
+            operationArea.tabs.setTabVisible(operationArea.index_info_editor_tab, True)
+            operationArea.tabs.setCurrentIndex(operationArea.index_info_editor_tab)
+        # 設置資訊編輯器
+        uuidList: list[str] = self.model.runningStore.get("comic_uuid_list", []) # 取得漫畫uuid總列表
+        selectedUuids: list[str] = [uuidList[listIndex] for listIndex in comic] # 選中漫畫UUID列表
+        self.model.runningStore.set("selected_comics", selectedUuids) # 儲存選中UUID
+        xmlComicDataList: list[XmlComicInfo] = [
+            cast(ComicEdittingData, self.model.comicDataStore.get(uuid)).get("original_data").get("xml_comic_info") for uuid in selectedUuids
+            ] # 選中漫畫資料列表
+        self.view.right_widget.info_editor_tab.setComicInfoData(xmlComicDataList) # 填充顯示
 
 
     def selectComicFolder(self, folder: str) -> None:
@@ -113,52 +119,32 @@ class MainController(QObject):
         self.view.left_widget.changeInfoLabel(select=0 ,total=len(self.model.runningStore.get("comic_uuid_list", []))) # 設置顯示資料
         self.view.loading.close() # 關閉處理中
 
-    # def startProcess(self) -> None:
-    #     """開始處理
-    #     """
-    #     self.view.loading.show() # 顯示處理中
-    #     edit_data: ComicInfoData = self.view.right_widget.info_editor_tab.getComicInfoData() # 取得編輯資料
-    #     comic_select: dict[str, QModelIndex] = self.model.appStore.get("comic_select", {}) # 取得選擇
-    #     if not comic_select or len(comic_select) < 1:
-    #         self.view.loading.close() # 關閉處理中
-    #         return
-    #     # 處理每一筆漫畫
-    #     for comic_name, model_index in comic_select.items():
-    #         if self.model.comicStore.get(comic_name) == None:
-    #             continue
-    #         comic_info_data: ComicInfoData = self.model.comicStore.get(comic_name)
-    #         # 創建深度拷貝
-    #         new_data: ComicInfoData = {
-    #             "nsmap": comic_info_data.get("nsmap", {}).copy(),
-    #             "fields": {
-    #                 "base": comic_info_data.get("fields", {}).get("base", {}).copy()
-    #             }
-    #         }
-    #         if "original_path" in comic_info_data:
-    #             new_data["original_path"] = comic_info_data["original_path"]
-    #         # 套用編輯資料
-    #         for ns, fields in edit_data.get("fields", {}).items():
-    #             if ns not in new_data["fields"]:
-    #                 new_data["fields"][ns] = {}
-    #             for field_name, value in fields.items():
-    #                 if value == "{keep}" or value == None:
-    #                     # 保持原值
-    #                     continue
-    #                 elif value == "":
-    #                     # 清空值
-    #                     if field_name in new_data["fields"][ns]:
-    #                         del new_data["fields"][ns][field_name]
-    #                 else:
-    #                     # 設定新值
-    #                     new_data["fields"][ns][field_name] = resolve_placeholders(value, {
-    #                         "{index}": str(model_index.row() + 1),
-    #                         "{total}": str(len(self.model.comicStore.data)),
-    #                     })
-    #         # 寫入檔案
-    #         comic_folder_path = self.model.appStore.get("comic_folder_path", "")
-    #         if comic_folder_path == "":
-    #             continue
-    #         comic_path = os.path.join(comic_folder_path, comic_name)
+    def startProcess(self) -> None:
+        """開始處理
+        """
+        self.view.loading.show() # 顯示處理中
+        editer_data: XmlComicInfo = self.view.right_widget.info_editor_tab.getComicInfoData() # 取得編輯資料
+        uuid_select: list[str] = self.model.runningStore.get("selected_comics", []) # 取得選擇
+        comic_all_list: list[str] = self.model.runningStore.get("comic_uuid_list", []) # 當前漫畫列表
+        if not uuid_select or len(uuid_select) < 1 or not comic_all_list or len(comic_all_list) < 1:
+            self.view.loading.close() # 關閉處理中
+            return
+        # 處理每一筆漫畫
+        for order, uuid in enumerate(uuid_select, start= 1):
+            # 組合佔位符資料
+            placeholder: ComicPlaceholderData = {
+                "index": comic_all_list.index(uuid) + 1,
+                "order": order,
+            }
+            # 創建針對性Xml資料
+            placeholder_editer_data: XmlComicInfo = XmlDataPlaceholderProcess(editer_data, placeholder)
+            # 更新Xml資料
+            old_xml_data: XmlComicInfo = self.model.comicDataStore.get(uuid)
+            if old_xml_data == None:
+                continue
+            new_xml_data: XmlComicInfo = updataXmlComicInfo(old_xml_data, placeholder_editer_data)
+            # 寫入檔案
+
 
     ###### 連接功能
 
