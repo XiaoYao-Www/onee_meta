@@ -9,7 +9,7 @@ from typing import Any, cast, Sequence, List, Optional, Callable
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 from src.classes.model.data_store import DataStore
-from src.classes.model.comic_editting_data import ComicEdittingData
+from src.classes.model.comic_data import ComicData
 
 class ComicListModel(QAbstractListModel):
     MIME_TYPE = "application/x-uuiditems"
@@ -49,8 +49,8 @@ class ComicListModel(QAbstractListModel):
         uuid = self.uuidList[index.row()]
         if role == Qt.ItemDataRole.DisplayRole:
             # 顯示 序號 + 訊息
-            edittingData: ComicEdittingData = cast(ComicEdittingData, self.comicDataStore.get(uuid, {}))
-            return edittingData.get("original_data").get("comic_path")
+            edittingData: ComicData = cast(ComicData, self.comicDataStore.get(uuid, {}))
+            return edittingData.get("comic_path")
         return None
     
     ###### 權限設置

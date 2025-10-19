@@ -6,11 +6,6 @@ from typing import TypedDict, List, Dict, Union, NotRequired
 
 class XmlComicInfo(TypedDict):
     """
-        原 ComicInfo.xml 所在相對路徑
-    """
-    original_path: NotRequired[str]
-
-    """
         命名空間
         {
             命名空間: 連結,
@@ -45,9 +40,19 @@ class ComicData(TypedDict):
     """
 
     """
+        UUID
+    """
+    uuid: str
+
+    """
         漫畫路徑(相對)
     """
     comic_path: str
+
+    """
+        原 ComicInfo.xml 所在相對路徑
+    """
+    comicInfo_path: NotRequired[str]
 
     """
         Xml資料

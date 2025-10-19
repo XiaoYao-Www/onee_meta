@@ -8,8 +8,8 @@ from pathlib import Path
 # 自訂庫
 import src.app_config as APP_CONGIF
 from src.classes.model.data_store import DataStore
-from src.classes.model.comic_editting_data import ComicEdittingData
-from src.model.functions.comic_read_write import readComicFolder
+from src.classes.model.comic_data import ComicData, XmlComicInfo
+from src.model.functions.comic_read_write import readComicFolder, writeComicData
 from src.classes.model.pyside_model.comic_list_model import ComicListModel
 
 class MainModel():
@@ -65,7 +65,7 @@ class MainModel():
         # 設定漫畫資料夾路徑
         self.runningStore.set("comic_folder_path", comicFolderPath)
         # 讀取漫畫資料夾
-        comic_editting_data: Dict[str, ComicEdittingData] = readComicFolder(
+        comic_editting_data: Dict[str, ComicData] = readComicFolder(
             comicFolderPath,
             self.appSetting.get("image_exts", []),
             self.appSetting.get("allow_files", []),
@@ -78,6 +78,19 @@ class MainModel():
         self.runningStore.set("comic_uuid_list", list(comic_editting_data.keys())) # 創建新list
         self.comicListModel.uuidList = self.runningStore.get("comic_uuid_list", []) # 重新綁定list
         self.comicListModel.endResetModel()
+
+    def writeComic(self, uuid: str) -> bool:
+        """將漫畫資料寫入成檔案
+
+        Args:
+            uuid (str): UUID
+
+        Returns:
+            bool: 成功與否
+        """
+        rootPath:str = self.runningStore.get("comic_folder_path")
+        comicData: ComicData = self.comicDataStore.get(uuid)
+        return writeComicData(rootPath, comicData)
 
     ###### 應用設定檔
 

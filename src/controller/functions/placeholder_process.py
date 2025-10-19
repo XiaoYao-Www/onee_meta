@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
 )
 # 自訂庫
 from src.functions.unity_function import parseNamespacedKey
-from src.controller.functions.placeholder_process import placeholderReplace
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.model.comic_data import XmlComicInfo
@@ -50,7 +49,7 @@ def XmlDataPlaceholderProcess(xmlData: XmlComicInfo, placeholderData: ComicPlace
             if not(field_cfg["type"] == QLineEdit or field_cfg["type"] == QTextEdit):
                 #　只處理文字類型
                 continue
-            namespace, key = parseNamespacedKey(field_cfg["type"]) # 分析命名空建和鍵值
+            namespace, key = parseNamespacedKey(field_cfg["info_key"]) # 分析命名空建和鍵值
             if not(namespace in newXmlData["fields"] and key in newXmlData["fields"][namespace]):
                 # 處理資料沒有指定項目
                 continue

@@ -15,7 +15,6 @@ from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONFIG
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.model.comic_data import ComicData, XmlComicInfo
-from src.classes.model.comic_editting_data import ComicEdittingData
 ## 翻譯
 from src.translations import TR
 

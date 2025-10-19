@@ -9,7 +9,6 @@ import zipfile
 
 # 自訂庫
 from src.classes.model.comic_data import XmlComicInfo
-from src.classes.model.comic_editting_data import ComicEdittingData
 
 
 def xml2Data(xmlContext: bytes) -> XmlComicInfo:

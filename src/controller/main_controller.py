@@ -5,13 +5,13 @@ from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionMode
 from PySide6.QtWidgets import QApplication
 from typing import List, cast
 import os
+import copy
 # 自訂庫
 from src.model.main_model import MainModel
 from src.view.main_view import MainView
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
 from src.classes.model.comic_data import XmlComicInfo, ComicData
-from src.classes.model.comic_editting_data import ComicEdittingData
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 from src.controller.functions.placeholder_process import XmlDataPlaceholderProcess
 from src.controller.functions.xml_data_process import updataXmlComicInfo
@@ -100,7 +100,7 @@ class MainController(QObject):
         selectedUuids: list[str] = [uuidList[listIndex] for listIndex in comic] # 選中漫畫UUID列表
         self.model.runningStore.set("selected_comics", selectedUuids) # 儲存選中UUID
         xmlComicDataList: list[XmlComicInfo] = [
-            cast(ComicEdittingData, self.model.comicDataStore.get(uuid)).get("original_data").get("xml_comic_info") for uuid in selectedUuids
+            cast(ComicData, self.model.comicDataStore.get(uuid)).get("xml_comic_info") for uuid in selectedUuids
             ] # 選中漫畫資料列表
         self.view.right_widget.info_editor_tab.setComicInfoData(xmlComicDataList) # 填充顯示
 
@@ -139,11 +139,20 @@ class MainController(QObject):
             # 創建針對性Xml資料
             placeholder_editer_data: XmlComicInfo = XmlDataPlaceholderProcess(editer_data, placeholder)
             # 更新Xml資料
-            old_xml_data: XmlComicInfo = self.model.comicDataStore.get(uuid)
+            old_xml_data: XmlComicInfo = cast(ComicData, self.model.comicDataStore.get(uuid)).get("xml_comic_info")
             if old_xml_data == None:
                 continue
-            new_xml_data: XmlComicInfo = updataXmlComicInfo(old_xml_data, placeholder_editer_data)
+            backup_xml_data: XmlComicInfo = copy.deepcopy(old_xml_data) # 先備份
+            updataXmlComicInfo(old_xml_data, placeholder_editer_data)
             # 寫入檔案
+            if not(self.model.writeComic(uuid)):
+                # 寫入失敗時恢復資料
+                comic_data = cast(ComicData, self.model.comicDataStore.get(uuid))["xml_comic_info"] = backup_xml_data
+
+        self.model.comicListModel.layoutChanged.emit() # 呼叫刷新列表顯示
+        self.view.left_widget.setSortType(0) # 改變排序方式
+        self.view.loading.close() # 關閉處理中
+
 
 
     ###### 連接功能
