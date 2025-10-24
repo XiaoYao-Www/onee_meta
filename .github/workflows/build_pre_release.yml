@@ -55,7 +55,7 @@ jobs:
               python -m pip install --upgrade pip
               python -m pip install poetry
               poetry config virtualenvs.create false --local || true
-              poetry install --no-interaction --no-ansi --without dev
+              poetry install --no-interaction --no-ansi --only main
           elif [ -f "pdm.lock" ] || grep -q "\[tool.pdm\]" pyproject.toml 2>/dev/null; then
               python -m pip install --upgrade pip
               python -m pip install pdm
