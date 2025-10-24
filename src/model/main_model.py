@@ -2,9 +2,10 @@
 # 主model
 #####
 import json
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, cast, Union
 import os
 from pathlib import Path
+from natsort import natsorted
 # 自訂庫
 import src.app_config as APP_CONGIF
 from src.classes.model.data_store import DataStore
@@ -53,6 +54,47 @@ class MainModel():
         self.appSetting.subscribe(self.saveAppSetting) # 綁定設定修改
     
     ##### 功能性函式
+
+    ###### 漫畫列表排序
+
+    def comicListSorted(self, type: int) -> None:
+        """排序漫畫列表
+
+        Args:
+            type (int): 排序方式
+        """
+        # 取得基底名稱
+        def get_basename_from_store(comic_uuid: str) -> str:
+            data = cast(Union[ComicData, None], self.comicDataStore.get(comic_uuid))
+            if not data:
+                return ""
+            path = data.get("comic_path")
+            return Path(path).name
+        # 取得集數
+        def get_number_from_store(comic_uuid: str) -> int:
+            data = cast(ComicData | None, self.comicDataStore.get(comic_uuid))
+            if not data:
+                return -1
+
+            number = data.get("xml_comic_info", {}).get("fields", {}).get("base", {}).get("Number") or ""
+            
+            try:
+                return int(number)
+            except ValueError:
+                return -1
+        # 排序處理
+        self.comicListModel.beginResetModel()
+        try:
+            uuid_list: list[str] = self.runningStore.get("comic_uuid_list", [])
+            if type == 1:
+                # natsorted 回傳新 list，所以要把排序結果覆蓋回原 list
+                sorted_list: list[str] = natsorted(uuid_list, key=lambda u: get_basename_from_store(u))
+                # 原地修改（保持引用）
+                uuid_list[:] = sorted_list
+            elif type == 2:
+                uuid_list.sort(key=lambda x: get_number_from_store(x))
+        finally:
+            self.comicListModel.endResetModel()
 
     ###### 檔案讀寫
 

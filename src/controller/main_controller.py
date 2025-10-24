@@ -74,6 +74,9 @@ class MainController(QObject):
         SIGNAL_BUS.uiSend.langChange.connect(self.changeLang) # 語言切換
         # 連接功能
         self.model.comicListModel.listIndexChange = self.comicListIndexChanged # 漫畫排列後選擇
+        SIGNAL_BUS.uiSend.comicListSort.connect( # 漫畫列表排序
+            lambda x: self.model.comicListSorted(x)
+        )
 
     ### 功能性函 ###
 
@@ -152,8 +155,6 @@ class MainController(QObject):
         self.model.comicListModel.layoutChanged.emit() # 呼叫刷新列表顯示
         self.view.left_widget.setSortType(0) # 改變排序方式
         self.view.loading.close() # 關閉處理中
-
-
 
     ###### 連接功能
 

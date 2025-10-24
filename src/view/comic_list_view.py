@@ -45,6 +45,7 @@ class ComicListView(QWidget):
         self.comic_list_sort.addItems([
             TR.COMIC_LIST_VIEW["手動"](),
             TR.COMIC_LIST_VIEW["檔名"](),
+            TR.COMIC_LIST_VIEW["集數"](),
         ])
         ## 資訊
         self.info_label = QLabel()
@@ -88,6 +89,10 @@ class ComicListView(QWidget):
         """
         # 選擇漫畫資料夾
         self.comic_path_button.pressed.connect(self.selectComicFolder)
+        # 漫畫列表排序改變
+        self.comic_list_sort.currentIndexChanged.connect(
+            lambda x: SIGNAL_BUS.uiSend.comicListSort.emit(x)
+        )
         # 漫畫選擇
         # -> 寫在模型設定裡
         # 語言刷新
@@ -170,6 +175,7 @@ class ComicListView(QWidget):
         self.comic_list_sort.addItems([
             TR.COMIC_LIST_VIEW["手動"](),
             TR.COMIC_LIST_VIEW["檔名"](),
+            TR.COMIC_LIST_VIEW["集數"](),
         ])
         self.setSortType(sort_index)
         # 顯示資訊
