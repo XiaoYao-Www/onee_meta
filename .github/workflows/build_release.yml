@@ -1,0 +1,128 @@
+#####
+# 編譯 exe 並發行為 Pre-release
+#####
+name: Build and Pre-release EXE
+
+on: # 主分支推送後
+  push:
+    branches:
+      - main
+
+# 權限設置
+permissions:
+  contents: read
+  packages: write
+  issues: write
+  actions: write
+
+jobs:
+  build_release:
+    # 基礎環境設置
+    runs-on: windows-latest
+    env:
+      PYTHON_VERSION: '3.11'
+      EXCLUDE_PATTERNS: '' # 需要排除的檔案
+      NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build'
+
+    # 執行階段
+    steps:
+      # 1. 拉取倉庫
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 完整歷史
+
+      # 2. 設定 Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # 3. 快取加速 pip
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          # 根據哈希值檢查是否改動依賴
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml','**/poetry.lock','**/requirements.txt') }}
+
+      # 4. 安裝依賴（自動檢測 pyproject.toml）
+      - name: Install dependencies from pyproject
+        shell: bash
+        run: |
+          set -e
+          if [ -f "poetry.lock" ] || grep -q "\[tool.poetry\]" pyproject.toml 2>/dev/null; then
+            python -m pip install --upgrade pip
+            python -m pip install poetry
+            poetry config virtualenvs.create false --local || true
+            poetry install --no-interaction --no-ansi --no-dev
+          elif [ -f "pdm.lock" ] || grep -q "\[tool.pdm\]" pyproject.toml 2>/dev/null; then
+            python -m pip install --upgrade pip
+            python -m pip install pdm
+            pdm install --no-edit --prod
+          elif [ -f "requirements.txt" ]; then
+            python -m pip install --upgrade pip
+            python -m pip install -r requirements.txt
+          else
+            python -m pip install --upgrade pip build
+            python -m pip install .
+
+      # 5. 移除指定檔案
+      - name: Remove files
+        shell: bash
+        run: |
+          for p in ${EXCLUDE_PATTERNS}; do
+            git ls-files -z "$p" | xargs -0 -r -n1 rm -f --
+            rm -rf $p || true
+          done
+
+      # 6. 安裝 Nuitka 與必須依賴
+      - name: Install Nuitka
+        run: python -m pip install nuitka numpy pandas scipy matplotlib
+
+      # 7. 下載 Dependency Walker
+      - name: Download and Extract Dependency Walker
+        run: |
+          mkdir -p "$env:LOCALAPPDATA\Nuitka\Nuitka\Cache\downloads\depends\x86_64"
+          curl -L -o "$env:LOCALAPPDATA\Nuitka\Nuitka\Cache\downloads\depends\x86_64\depends22_x64.zip" "https://www.dependencywalker.com/depends22_x64.zip"
+          powershell -Command "Expand-Archive -Path '$env:LOCALAPPDATA\Nuitka\Nuitka\Cache\downloads\depends\x86_64\depends22_x64.zip' -DestinationPath '$env:LOCALAPPDATA\Nuitka\Nuitka\Cache\downloads\depends\x86_64'"
+        shell: pwsh
+
+      # 8. 編譯 EXE
+      - name: Build exe with Nuitka
+        run: ${{ env.NUITKA_CMD }}
+        shell: cmd
+
+      # 9. 封裝為 ZIP
+      - name: Zip output
+        run: powershell Compress-Archive -Path dev/build\* -DestinationPath onee_meta_preview_exe_${{ github.run_number }}.zip
+
+      # 10. 上傳 artifact (保留 preview)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: onee_meta_preview_exe_${{ github.run_number }}
+          path: onee_meta_preview_exe_${{ github.run_number }}.zip
+
+      # 11. 創建 Pre-release
+      - name: Create Pre-release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Pre-release ${{ github.run_number }}
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 12. 上傳檔案到 Pre-release
+      - name: Upload ZIP to Pre-release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: onee_meta_preview_exe_${{ github.run_number }}.zip
+          asset_name: onee_meta_preview_exe_${{ github.run_number }}.zip
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
