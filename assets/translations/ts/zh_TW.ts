@@ -2,7 +2,83 @@
 <!DOCTYPE TS>
 <TS version="2.1">
 <context>
-    <name>schema_config</name>
+    <name>app_info_tab</name>
+    <message>
+        <source>👻 作者資訊</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>逍遙 ( Xiao Yao )
+觀繁花而不與其爭艷
+處江湖而不染其煙塵</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>作者 Github 連結</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>📦 軟體資訊</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>版本: {version}
+姐姐大人永遠是對的</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>專案 GitHub 專案連結</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>app_setting_tab</name>
+    <message>
+        <source>字體大小：</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>圖片附檔名：</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>允許檔案：</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>語言選擇：</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>comic_list_view</name>
+    <message>
+        <source>選擇漫畫資料夾路徑</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>手動</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>檔名</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>集數</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>{selected} / {total} 本漫畫</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>選擇漫畫資料夾</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>info_editor_tab</name>
     <message>
         <source>書籍資訊</source>
         <translation type="unfinished"></translation>
@@ -183,54 +259,26 @@
         <source>掃描資訊</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>send_message</name>
     <message>
-        <source>錯誤</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>提示</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>完成</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>請選擇輸出資料夾</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>請選擇漫畫資料夾</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>請至少選擇一個檔案進行處理</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>所有漫畫處理完成！</source>
+        <source>標籤</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>ui_constants</name>
+    <name>main_controller</name>
     <message>
-        <source>ComicInfo 編輯器</source>
+        <source>設定錯誤</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>列表</source>
+        <source>沒有目標語言檔案</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>operation_area</name>
     <message>
-        <source>編輯</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>設定</source>
+        <source>儲存編輯</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -238,98 +286,29 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>👻 作者資訊</source>
+        <source>設定</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>逍遙 ( Xiao Yao )
-觀繁花而不與其爭艷
-處江湖而不染其煙塵</source>
+        <source>資訊</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ui_main_view</name>
+    <message>
+        <source>Onee Meta</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>作者 Github 連結</source>
+        <source>處理中...</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>ui_widgets</name>
     <message>
-        <source>📦 軟體資訊</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>版本: {version}
-一款用於編輯漫畫 ComicInfo 的編輯器</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>GitHub 專案連結</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>字體大小：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>寫入模式：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>原位置寫入</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>鋪平寫入</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>圖片附檔名：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>允許檔案：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>選擇漫畫資料夾</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>尚未選擇</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>手動</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>檔名</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>編號</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>排序依據：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>已選中 {selected} / 共 {total} 本漫畫</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>選擇輸出資料夾</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>輸出副檔名：</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>開始處理</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>語言選擇：</source>
+        <source>輸入{keep}保留原值</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

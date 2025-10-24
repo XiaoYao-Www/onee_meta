@@ -5,13 +5,17 @@ from PySide6.QtWidgets import QLineEdit
 from PySide6.QtGui import QIntValidator
 # 自訂庫
 from src.translations import TR
+from src.signal_bus import SIGNAL_BUS
 
 class SmartIntegerField(QLineEdit):
     """自訂數字輸入
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setPlaceholderText(TR.UI_CONSTANTS["輸入{keep}保留原值"]())
+        self.setPlaceholderText(TR.UI_WIDGETS["輸入{keep}保留原值"]())
+        SIGNAL_BUS.uiRevice.translateUi.connect( # 翻譯處理
+            lambda: self.setPlaceholderText(TR.UI_WIDGETS["輸入{keep}保留原值"]())
+        )
         self.textChanged.connect(self._on_text_changed)
         self._state = "clear"  # 初始狀態為清除
 

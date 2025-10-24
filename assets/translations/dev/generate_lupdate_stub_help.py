@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 ## 動態添加 src 到模組路徑（以當前檔案位置為基準）
 BASE_DIR = Path(__file__).resolve().parent
-SRC_DIR = (BASE_DIR / "../../").resolve()
+SRC_DIR = (BASE_DIR / "../../../").resolve()
 print(SRC_DIR)
 sys.path.insert(0, str(SRC_DIR))
 
@@ -12,7 +12,7 @@ from PySide6.QtCore import QCoreApplication
 from types import MappingProxyType
 ## 自訂庫
 from src.translations import TR
-from src.classes.lazy_str import LazyStr
+from src.classes.view.lazy_str import LazyStr
 
 output_lines = [
     "from PySide6.QtCore import QCoreApplication",
