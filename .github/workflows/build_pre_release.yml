@@ -10,7 +10,7 @@ on: # 主分支推送後
 
 # 權限設置
 permissions:
-  contents: read
+  contents: write
   packages: write
   issues: write
   actions: write
