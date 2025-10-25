@@ -1,14 +1,13 @@
 #####
-# 自動編譯 exe 並發行為 Pre-release
+# 自動編譯 EXE 並建立 Release（正式版）
 #####
-name: Auto Build and Pre-release EXE
+name: Auto Build and Release EXE
 
 on:
   push:
     branches:
       - main
 
-# 權限設置
 permissions:
   contents: write
   packages: write
@@ -20,7 +19,7 @@ jobs:
     runs-on: windows-latest
     env:
       PYTHON_VERSION: '3.11'
-      EXCLUDE_PATTERNS: '' # 需要排除的檔案
+      EXCLUDE_PATTERNS: '' # 需要排除的檔案（用 ; 分隔）
       # Nuitka 編譯命令
       NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build'
 
@@ -31,18 +30,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 取得完整 commit 歷史
+          fetch-depth: 0
 
       # ----------------------------
       # 2. 取得版本號
       # ----------------------------
       - name: Get version from Python file
         id: get_version
-        shell: pwsh
+        shell: bash
         run: |
-          $version = python -c "import re; print(re.search(r'appVersion\s*=\s*\"([^\"]+)\"', open('src/app_config.py').read()).group(1))"
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-          Write-Host "Detected version: $version"
+          VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py").read()).group(1))')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
 
       # ----------------------------
       # 3. 設定 Python
@@ -57,12 +56,11 @@ jobs:
       # ----------------------------
       - name: Detect architecture
         id: arch
-        shell: pwsh
+        shell: bash
         run: |
-          $arch = python -c "import platform; print(platform.architecture()[0])"
-          if ($arch -eq "64bit") { $arch="x64" } else { $arch="x86" }
-          echo "arch=$arch" >> $env:GITHUB_OUTPUT
-          Write-Host "Detected architecture: $arch"
+          ARCH=$(python -c "import platform; print('x64' if platform.architecture()[0] == '64bit' else 'x86')")
+          echo "arch=$ARCH" >> $GITHUB_OUTPUT
+          echo "Detected architecture: $ARCH"
 
       # ----------------------------
       # 5. 快取 pip
@@ -77,46 +75,47 @@ jobs:
       # 6. 安裝依賴 (自動偵測 pyproject.toml / pdm / requirements)
       # ----------------------------
       - name: Install dependencies
-        shell: pwsh
+        shell: bash
         run: |
-          Set-StrictMode -Version Latest
-          if (Test-Path "poetry.lock" -or (Select-String -Pattern "\[tool.poetry\]" pyproject.toml -Quiet)) {
-              python -m pip install --upgrade pip
-              python -m pip install poetry
-              poetry config virtualenvs.create false --local
-              poetry install --no-interaction --no-ansi --only main
-          } elseif (Test-Path "pdm.lock" -or (Select-String -Pattern "\[tool.pdm\]" pyproject.toml -Quiet)) {
-              python -m pip install --upgrade pip
-              python -m pip install pdm
-              pdm install --no-edit --prod
-          } elseif (Test-Path "requirements.txt") {
-              python -m pip install --upgrade pip
-              python -m pip install -r requirements.txt
-          } else {
-              python -m pip install --upgrade pip build
-              python -m pip install .
-          }
+          set -e
+          python -m pip install --upgrade pip
+          if grep -q "\[tool.poetry\]" pyproject.toml 2>/dev/null || [ -f poetry.lock ]; then
+            echo "Using Poetry..."
+            python -m pip install poetry
+            poetry config virtualenvs.create false --local
+            poetry install --no-interaction --no-ansi --only main
+          elif grep -q "\[tool.pdm\]" pyproject.toml 2>/dev/null || [ -f pdm.lock ]; then
+            echo "Using PDM..."
+            python -m pip install pdm
+            pdm install --no-edit --prod
+          elif [ -f requirements.txt ]; then
+            echo "Using requirements.txt..."
+            python -m pip install -r requirements.txt
+          else
+            echo "Fallback: install current package"
+            python -m pip install .
+          fi
 
       # ----------------------------
       # 7. 移除指定檔案
       # ----------------------------
       - name: Remove files
-        shell: pwsh
+        shell: bash
         run: |
-          if ($env:EXCLUDE_PATTERNS) {
-            $patterns = $env:EXCLUDE_PATTERNS -split ';'
-            foreach ($p in $patterns) {
-                Write-Host "Removing files matching: $p"
-                git ls-files $p | ForEach-Object { Remove-Item $_ -Force -ErrorAction SilentlyContinue }
-                Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue
-            }
-          }
+          if [ -n "$EXCLUDE_PATTERNS" ]; then
+            IFS=';' read -ra patterns <<< "$EXCLUDE_PATTERNS"
+            for p in "${patterns[@]}"; do
+              echo "Removing files matching: $p"
+              git ls-files -z "$p" | xargs -0 -r rm -f --
+              rm -rf "$p" || true
+            done
+          fi
 
       # ----------------------------
       # 8. 安裝 Nuitka 與必要依賴
       # ----------------------------
       - name: Install Nuitka
-        shell: pwsh
+        shell: bash
         run: |
           python -m pip install nuitka numpy pandas scipy matplotlib
 
@@ -124,31 +123,34 @@ jobs:
       # 9. 下載並解壓 Dependency Walker
       # ----------------------------
       - name: Download and Extract Dependency Walker
-        shell: pwsh
+        shell: bash
         run: |
-          $dw_path = "$env:LOCALAPPDATA\Nuitka\Nuitka\Cache\downloads\depends\x86_64"
-          New-Item -ItemType Directory -Force -Path $dw_path
-          $zip_file = Join-Path $dw_path "depends22_x64.zip"
-          Invoke-WebRequest -Uri "https://www.dependencywalker.com/depends22_x64.zip" -OutFile $zip_file
-          Expand-Archive -Path $zip_file -DestinationPath $dw_path -Force
+          DW_PATH="$LOCALAPPDATA/Nuitka/Nuitka/Cache/downloads/depends/x86_64"
+          mkdir -p "$DW_PATH"
+          ZIP_FILE="$DW_PATH/depends22_x64.zip"
+          curl -L -o "$ZIP_FILE" "https://www.dependencywalker.com/depends22_x64.zip"
+          unzip -o "$ZIP_FILE" -d "$DW_PATH"
 
       # ----------------------------
       # 10. 編譯 EXE
       # ----------------------------
       - name: Build exe with Nuitka
-        shell: cmd
-        run: ${{ env.NUITKA_CMD }}
+        shell: bash
+        run: |
+          echo "Running Nuitka build..."
+          eval "${NUITKA_CMD}"
 
       # ----------------------------
       # 11. 封裝為 ZIP
       # ----------------------------
       - name: Zip output
         id: zip_file
-        shell: pwsh
+        shell: bash
         run: |
-          $file_name = "onee_meta_${{ steps.get_version.outputs.version }}_auto-${{ steps.arch.outputs.arch }}"
-          echo "file_name=$file_name" >> $env:GITHUB_OUTPUT
-          Compress-Archive -Path "dev/build/app.dist/*" -DestinationPath "$file_name.zip" -Force
+          FILE_NAME="onee_meta_${{ steps.get_version.outputs.version }}_auto-${{ steps.arch.outputs.arch }}"
+          echo "file_name=$FILE_NAME" >> $GITHUB_OUTPUT
+          powershell Compress-Archive -Path "dev/build/app.dist/*" -DestinationPath "$FILE_NAME.zip" -Force
+          echo "Created ZIP: $FILE_NAME.zip"
 
       # ----------------------------
       # 12. 上傳 artifact
@@ -164,23 +166,21 @@ jobs:
       # ----------------------------
       - name: Collect commit logs since last release
         id: changelog
-        shell: pwsh
+        shell: bash
         run: |
-          $last_tag = git describe --tags --abbrev=0 2>$null
-          if (-not $last_tag) { $last_tag="" }
-          Write-Host "Last tag: $last_tag"
-          if (-not $last_tag) {
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Last tag: $LAST_TAG"
+          if [ -z "$LAST_TAG" ]; then
             git log --pretty=format:"- %s (%h)" > commits.txt
-          } else {
-            git log "$last_tag..HEAD" --pretty=format:"- %s (%h)" > commits.txt
-          }
-          $changelog = Get-Content commits.txt | Out-String
-          echo "changelog<<EOF" >> $env:GITHUB_OUTPUT
-          echo $changelog >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
+          else
+            git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" > commits.txt
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat commits.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # ----------------------------
-      # 14. 建立 Release
+      # 14. 建立 Release（正式版）
       # ----------------------------
       - name: Create Release
         uses: softprops/action-gh-release@v2
