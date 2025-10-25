@@ -19,7 +19,6 @@ jobs:
     runs-on: windows-latest
     env:
       PYTHON_VERSION: '3.11'
-      EXCLUDE_PATTERNS: '' # 需要排除的檔案（用 ; 分隔）
       # Nuitka 編譯命令
       NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build'
 
@@ -33,20 +32,44 @@ jobs:
           fetch-depth: 0
 
       # ----------------------------
-      # 2. 取得版本號
+      # 2. 檢查版本號
       # ----------------------------
       - name: Get version from Python file
-        id: get_version
+        id: check_version
         shell: bash
         run: |
-          VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py", encoding="utf-8").read()).group(1))')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
+          set -e
+          # 從 app_config.py 獲取當前版本號
+          CURRENT_VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py", encoding="utf-8").read()).group(1))')
+          echo "Current version: $CURRENT_VERSION"
+
+          # 獲取最新標籤
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags found, proceeding with build."
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+          else
+            # 從標籤提取版本號（假設標籤格式為 vX.Y.Z_Auto）
+            LAST_VERSION=$(echo "$LAST_TAG" | sed 's/^v\(.*\)_Auto$/\1/')
+            echo "Last version: $LAST_VERSION"
+
+            # 比較版本號
+            if [ "$CURRENT_VERSION" != "$LAST_VERSION" ]; then
+              echo "Version changed, proceeding with build."
+              echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+              echo "version_changed=true" >> $GITHUB_OUTPUT
+            else
+              echo "Version unchanged, stopping workflow."
+              echo "version_changed=false" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       # ----------------------------
       # 3. 設定 Python
       # ----------------------------
       - name: Setup Python
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -55,6 +78,7 @@ jobs:
       # 4. 偵測架構
       # ----------------------------
       - name: Detect architecture
+        if: steps.check_version.outputs.version_changed == 'true'
         id: arch
         shell: bash
         run: |
@@ -66,15 +90,17 @@ jobs:
       # 5. 快取 pip
       # ----------------------------
       - name: Cache pip
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: actions/cache@v4
         with:
-          path: $HOME/.cache/pip
+          path: ~\AppData\Local\pip\Cache
           key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml','**/poetry.lock','**/requirements.txt') }}
 
       # ----------------------------
       # 6. 安裝依賴 (自動偵測 pyproject.toml / pdm / requirements)
       # ----------------------------
       - name: Install dependencies
+        if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
           set -e
@@ -97,32 +123,19 @@ jobs:
           fi
 
       # ----------------------------
-      # 7. 移除指定檔案
-      # ----------------------------
-      - name: Remove files
-        shell: bash
-        run: |
-          if [ -n "$EXCLUDE_PATTERNS" ]; then
-            IFS=';' read -ra patterns <<< "$EXCLUDE_PATTERNS"
-            for p in "${patterns[@]}"; do
-              echo "Removing files matching: $p"
-              git ls-files -z "$p" | xargs -0 -r rm -f --
-              rm -rf "$p" || true
-            done
-          fi
-
-      # ----------------------------
-      # 8. 安裝 Nuitka 與必要依賴
+      # 7. 安裝 Nuitka 與必要依賴
       # ----------------------------
       - name: Install Nuitka
+        if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
           python -m pip install nuitka numpy pandas scipy matplotlib
 
       # ----------------------------
-      # 9. 下載並解壓 Dependency Walker
+      # 8. 下載並解壓 Dependency Walker
       # ----------------------------
       - name: Download and Extract Dependency Walker
+        if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
           DW_PATH="$LOCALAPPDATA/Nuitka/Nuitka/Cache/downloads/depends/x86_64"
@@ -132,39 +145,43 @@ jobs:
           unzip -o "$ZIP_FILE" -d "$DW_PATH"
 
       # ----------------------------
-      # 10. 編譯 EXE
+      # 9. 編譯 EXE
       # ----------------------------
       - name: Build exe with Nuitka
+        if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
           echo "Running Nuitka build..."
           eval "python -m ${NUITKA_CMD}"
 
       # ----------------------------
-      # 11. 封裝為 ZIP
+      # 10. 封裝為 ZIP
       # ----------------------------
       - name: Zip output
+        if: steps.check_version.outputs.version_changed == 'true'
         id: zip_file
         shell: bash
         run: |
-          FILE_NAME="onee_meta_${{ steps.get_version.outputs.version }}_auto-${{ steps.arch.outputs.arch }}"
+          FILE_NAME="onee_meta_${{ steps.check_version.outputs.version }}_auto-${{ steps.arch.outputs.arch }}"
           echo "file_name=$FILE_NAME" >> $GITHUB_OUTPUT
           powershell Compress-Archive -Path "dev/build/app.dist/*" -DestinationPath "$FILE_NAME.zip" -Force
           echo "Created ZIP: $FILE_NAME.zip"
 
       # ----------------------------
-      # 12. 上傳 artifact
+      # 11. 上傳 artifact
       # ----------------------------
       - name: Upload artifact
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.zip_file.outputs.file_name }}
           path: ${{ steps.zip_file.outputs.file_name }}.zip
 
       # ----------------------------
-      # 13. 收集 commit 訊息
+      # 12. 收集 commit 訊息
       # ----------------------------
       - name: Collect commit logs since last release
+        if: steps.check_version.outputs.version_changed == 'true'
         id: changelog
         shell: bash
         run: |
@@ -185,9 +202,10 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # ----------------------------
-      # 14. 建立 Release（正式版）
+      # 13. 建立 Release（正式版）
       # ----------------------------
       - name: Create Release
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.get_version.outputs.version }}_Auto
