@@ -175,7 +175,7 @@ jobs:
           else
             git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" > commits.txt
           fi
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "changelog<<'EOF'" >> $GITHUB_OUTPUT
           cat commits.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
