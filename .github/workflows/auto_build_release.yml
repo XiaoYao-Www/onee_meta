@@ -170,7 +170,7 @@ jobs:
         run: |
           set -e
 
-          # 設置 UTF-8 編碼以正確處理中文
+          # 設置 UTF-8 編碼
           export LC_ALL=C.UTF-8
 
           # 獲取最新標籤
@@ -189,33 +189,30 @@ jobs:
             echo "No changes found" > commits.txt
           fi
 
-          # 移除 Windows 換行符（針對 Windows 環境）
+          # 移除 Windows 換行符
           tr -d '\r' < commits.txt > commits_unix.txt
           mv commits_unix.txt commits.txt
 
-          # 調試：打印 commits.txt 內容
+          # 調試：打印內容
           echo "Contents of commits.txt:"
           cat commits.txt
 
-          # 調試：檢查 commits.txt 的十六進制內容（以識別隱藏字符）
+          # 調試：十六進制內容
           echo "Hex dump of commits.txt:"
           xxd commits.txt || echo "xxd not available, skipping hex dump"
 
-          # 使用臨時文件構建輸出
-          echo "changelog<<EOF" > temp_output.txt
-          cat commits.txt >> temp_output.txt
-          echo "EOF" >> temp_output.txt
+          # 將內容編碼為 base64
+          CHANGELOG_BASE64=$(base64 -w 0 commits.txt)
 
-          # 調試：打印 temp_output.txt 內容
-          echo "Contents of temp_output.txt:"
-          cat temp_output.txt
+          # 調試：打印 base64 內容
+          echo "Base64 encoded changelog:"
+          echo "$CHANGELOG_BASE64"
 
-          # 清空並寫入 GITHUB_OUTPUT
-          : > $GITHUB_OUTPUT
-          cat temp_output.txt >> $GITHUB_OUTPUT
+          # 寫入 GITHUB_OUTPUT
+          echo "changelog=$CHANGELOG_BASE64" >> $GITHUB_OUTPUT
 
-          # 清理臨時文件
-          rm -f commits.txt temp_output.txt
+          # 清理
+          rm -f commits.txt
 
       # ----------------------------
       # 14. 建立 Release（正式版）
