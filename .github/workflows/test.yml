@@ -1,0 +1,64 @@
+name: 測試提取提交訊息並創建 Release
+
+on:
+  push:
+    branches:
+      - main  # 推送到 main 分支時觸發，可根據需要改為其他分支
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  actions: write
+
+jobs:
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+      # 檢出代碼
+      - name: 檢出倉庫
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 確保獲取完整提交歷史
+
+      # 收集提交訊息
+      - name: 收集提交訊息
+        id: changelog
+        shell: bash
+        run: |
+          set -e
+          export LC_ALL=C.UTF-8
+
+          # 獲取最新標籤
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          # 生成提交日誌
+          if [ -z "$LAST_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" | tr -d '\r')
+          else
+            CHANGELOG=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" | tr -d '\r')
+          fi
+
+          # 檢查是否為空
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="無變更內容"
+          fi
+
+          # 將日誌寫入 GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # 創建 Release
+      - name: 創建測試 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-${{ github.sha }}  # 使用提交 SHA 作為測試標籤
+          name: 測試版本 ${{ github.sha }}
+          body: |
+            ### 變更內容
+            ${{ steps.changelog.outputs.changelog }}
+          draft: true  # 設為草稿，方便測試後刪除
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
