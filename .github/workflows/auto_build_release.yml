@@ -39,7 +39,7 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py").read()).group(1))')
+          VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py", encoding="utf-8").read()).group(1))')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
