@@ -138,7 +138,7 @@ jobs:
         shell: bash
         run: |
           echo "Running Nuitka build..."
-          eval "${NUITKA_CMD}"
+          eval "python -m ${NUITKA_CMD}"
 
       # ----------------------------
       # 11. 封裝為 ZIP
