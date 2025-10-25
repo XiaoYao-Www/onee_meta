@@ -168,6 +168,7 @@ jobs:
         id: changelog
         shell: bash
         run: |
+          set -e
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "Last tag: $LAST_TAG"
           if [ -z "$LAST_TAG" ]; then
@@ -175,7 +176,14 @@ jobs:
           else
             git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" > commits.txt
           fi
-          echo "changelog<<'EOF'" >> $GITHUB_OUTPUT
+          if [ ! -s commits.txt ]; then
+            echo "No changes found" > commits.txt
+          fi
+          tr -d '\r' < commits.txt > commits_unix.txt
+          mv commits_unix.txt commits.txt
+          echo "Contents of commits.txt:"
+          cat commits.txt
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
           cat commits.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
