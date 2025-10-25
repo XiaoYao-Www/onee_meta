@@ -169,50 +169,20 @@ jobs:
         shell: bash
         run: |
           set -e
-
-          # 設置 UTF-8 編碼
           export LC_ALL=C.UTF-8
-
-          # 獲取最新標籤
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          echo "Last tag: $LAST_TAG"
-
-          # 生成提交日誌
-          if [ -z "$LAST_TAG" ]; then
-            git log --pretty=format:"- %s (%h)" > commits.txt
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "") # 獲取最新標籤
+          if [ -z "$LAST_TAG" ]; then # 生成提交日誌
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" | tr -d '\r')
           else
-            git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" > commits.txt
+            CHANGELOG=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" | tr -d '\r')
           fi
-
-          # 檢查文件是否為空
-          if [ ! -s commits.txt ]; then
-            echo "No changes found" > commits.txt
+          if [ -z "$CHANGELOG" ]; then # 檢查是否為空
+            CHANGELOG="無變更內容"
           fi
-
-          # 移除 Windows 換行符
-          tr -d '\r' < commits.txt > commits_unix.txt
-          mv commits_unix.txt commits.txt
-
-          # 調試：打印內容
-          echo "Contents of commits.txt:"
-          cat commits.txt
-
-          # 調試：十六進制內容
-          echo "Hex dump of commits.txt:"
-          xxd commits.txt || echo "xxd not available, skipping hex dump"
-
-          # 將內容編碼為 base64
-          CHANGELOG_BASE64=$(base64 -w 0 commits.txt)
-
-          # 調試：打印 base64 內容
-          echo "Base64 encoded changelog:"
-          echo "$CHANGELOG_BASE64"
-
-          # 寫入 GITHUB_OUTPUT
-          echo "changelog=$CHANGELOG_BASE64" >> $GITHUB_OUTPUT
-
-          # 清理
-          rm -f commits.txt
+          # 將日誌寫入 GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # ----------------------------
       # 14. 建立 Release（正式版）
