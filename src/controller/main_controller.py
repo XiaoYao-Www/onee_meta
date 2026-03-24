@@ -3,6 +3,7 @@
 #####
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
+from datetime import datetime
 from typing import List, cast
 import os
 import copy
@@ -134,15 +135,30 @@ class MainController(QObject):
             return
         # 處理每一筆漫畫
         for order, uuid in enumerate(uuid_select, start= 1):
+            comic_data: ComicData = cast(ComicData, self.model.comicDataStore.get(uuid)) # 取得漫畫資料
+            filename_full = os.path.basename(comic_data["comic_path"]) # 取得檔名
+            file_name, file_ext = os.path.splitext(filename_full) # 分割副檔名
+            parent_folder = os.path.basename(os.path.dirname(comic_data["comic_path"])) # 取得父資料夾名
+
+            # 取得時間
+            now = datetime.now()
+
             # 組合佔位符資料
             placeholder: ComicPlaceholderData = {
                 "index": comic_all_list.index(uuid) + 1,
                 "order": order,
+                "file_name": file_name,
+                "file_ext": file_ext,
+                "parent_folder": parent_folder,
+                "year": str(now.year),
+                "month": f"{now.month:02d}",
+                "day": f"{now.day:02d}",
+                "date": now.strftime("%Y-%m-%d"),
             }
             # 創建針對性Xml資料
             placeholder_editer_data: XmlComicInfo = XmlDataPlaceholderProcess(editer_data, placeholder)
             # 更新Xml資料
-            old_xml_data: XmlComicInfo = cast(ComicData, self.model.comicDataStore.get(uuid)).get("xml_comic_info")
+            old_xml_data: XmlComicInfo = comic_data.get("xml_comic_info")
             if old_xml_data == None:
                 continue
             backup_xml_data: XmlComicInfo = copy.deepcopy(old_xml_data) # 先備份
@@ -150,7 +166,7 @@ class MainController(QObject):
             # 寫入檔案
             if not(self.model.writeComic(uuid)):
                 # 寫入失敗時恢復資料
-                comic_data = cast(ComicData, self.model.comicDataStore.get(uuid))["xml_comic_info"] = backup_xml_data
+                recover_comic_data = cast(ComicData, self.model.comicDataStore.get(uuid))["xml_comic_info"] = backup_xml_data
 
         self.model.comicListModel.layoutChanged.emit() # 呼叫刷新列表顯示
         self.view.left_widget.setSortType(0) # 改變排序方式

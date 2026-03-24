@@ -17,6 +17,7 @@ import src.app_config as APP_CONFIG
 
 def placeholderReplace(text: str, placeholderData: ComicPlaceholderData) -> str:
     """文字替換佔位符
+    支援 Python 格式化語法，如 {index:03d}
 
     Args:
         text (str): 字串
@@ -27,9 +28,23 @@ def placeholderReplace(text: str, placeholderData: ComicPlaceholderData) -> str:
     """
     def repl(match: re.Match):
         key = match.group(1)
-        return str(placeholderData.get(key, match.group(0)))
+        fmt = match.group(2)
+        
+        if key not in placeholderData:
+            return match.group(0)
+            
+        value = placeholderData[key]
+        
+        if fmt:
+            try:
+                return format(value, fmt)
+            except ValueError:
+                return str(value)
+        
+        return str(value)
     
-    pattern = re.compile(r"{(\w+)}")
+    # 匹配 {key} 或 {key:format}
+    pattern = re.compile(r"{(\w+)(?::([^}]+))?}")
     return pattern.sub(repl, text)
 
 def XmlDataPlaceholderProcess(xmlData: XmlComicInfo, placeholderData: ComicPlaceholderData) -> XmlComicInfo:

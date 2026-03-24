@@ -8,3 +8,10 @@ class ComicPlaceholderData(TypedDict):
     """
     index: int # 列表絕對位置
     order: int # 選中項相對位置
+    file_name: str # 檔案名稱(不含副檔名)
+    file_ext: str # 檔案副檔名
+    parent_folder: str # 父資料夾名稱
+    year: str # 年
+    month: str # 月
+    day: str # 日
+    date: str # 完整日期 (YYYY-MM-DD)
