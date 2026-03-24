@@ -116,9 +116,12 @@ class MainController(QObject):
             folder (str): 資料夾路徑
         """
         self.view.loading.show() # 顯示處理中
+        self.application.processEvents() # 刷新UI，確保Loading顯示
         self.model.runningStore.set("comic_folder_path", folder) # 儲存設定
+        self.model.runningStore.set("selected_comics", []) # 清除選中緩存
         self.view.left_widget.comic_path_button.setText(folder) # 改換按鈕文字
         self.view.left_widget.comic_path_button.setToolTip(folder) # 改換按鈕提示
+        self.view.right_widget.tabs.setTabVisible(self.view.right_widget.index_info_editor_tab, False) # 隱藏編輯分頁
         self.model.readComicFolder(folder) # 呼叫 model 讀取
         self.view.left_widget.changeInfoLabel(select=0 ,total=len(self.model.runningStore.get("comic_uuid_list", []))) # 設置顯示資料
         self.view.loading.close() # 關閉處理中
@@ -127,12 +130,14 @@ class MainController(QObject):
         """開始處理
         """
         self.view.loading.show() # 顯示處理中
+        self.application.processEvents() # 刷新UI，確保Loading顯示
         editer_data: XmlComicInfo = self.view.right_widget.info_editor_tab.getComicInfoData() # 取得編輯資料
         uuid_select: list[str] = self.model.runningStore.get("selected_comics", []) # 取得選擇
         comic_all_list: list[str] = self.model.runningStore.get("comic_uuid_list", []) # 當前漫畫列表
         if not uuid_select or len(uuid_select) < 1 or not comic_all_list or len(comic_all_list) < 1:
             self.view.loading.close() # 關閉處理中
             return
+        fail_count: int = 0 # 失敗計數
         # 處理每一筆漫畫
         for order, uuid in enumerate(uuid_select, start= 1):
             comic_data: ComicData = cast(ComicData, self.model.comicDataStore.get(uuid)) # 取得漫畫資料
@@ -167,10 +172,17 @@ class MainController(QObject):
             if not(self.model.writeComic(uuid)):
                 # 寫入失敗時恢復資料
                 recover_comic_data = cast(ComicData, self.model.comicDataStore.get(uuid))["xml_comic_info"] = backup_xml_data
+                fail_count += 1
 
         self.model.comicListModel.layoutChanged.emit() # 呼叫刷新列表顯示
         self.view.left_widget.setSortType(0) # 改變排序方式
         self.view.loading.close() # 關閉處理中
+
+        # 顯示處理結果
+        if fail_count > 0:
+            SIGNAL_BUS.uiRevice.sendCritical.emit("處理完成", f"已完成處理，但有 {fail_count} 筆寫入失敗。")
+        else:
+            SIGNAL_BUS.uiRevice.sendInformation.emit("處理完成", f"成功處理 {len(uuid_select)} 本漫畫。")
 
     ###### 連接功能
 
