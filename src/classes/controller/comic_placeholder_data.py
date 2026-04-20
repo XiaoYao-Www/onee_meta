@@ -15,3 +15,4 @@ class ComicPlaceholderData(TypedDict):
     month: str # 月
     day: str # 日
     date: str # 完整日期 (YYYY-MM-DD)
+    clear_old_title: str # 整理過的舊名稱
