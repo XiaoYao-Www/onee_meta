@@ -59,7 +59,9 @@ class MainController(QObject):
         self.setImageExt(self.model.appSetting.get("image_exts", [])) # 圖片副檔名
         self.setAllowFile(self.model.appSetting.get("allow_files", [])) # 允許檔案
         self.changeLang(self.model.appSetting.get("lang", "")) # 翻譯
+        self.setCalibrePath(self.model.appSetting.get("calibre_path", "")) # Calibre路徑
 
+    ### 訊號連接 ###
 
     def signal_connection(self) -> None:
         """訊號連接
@@ -73,6 +75,7 @@ class MainController(QObject):
         SIGNAL_BUS.uiSend.imgExtensionSet.connect(self.setImageExt) # 圖片附檔名設定
         SIGNAL_BUS.uiSend.allowFileSet.connect(self.setAllowFile) # 允許檔案設定
         SIGNAL_BUS.uiSend.langChange.connect(self.changeLang) # 語言切換
+        SIGNAL_BUS.uiSend.carlibrePathSet.connect(self.setCalibrePath) # Calibre路徑設定
         # 連接功能
         self.model.comicListModel.listIndexChange = self.comicListIndexChanged # 漫畫排列後選擇
         SIGNAL_BUS.uiSend.comicListSort.connect( # 漫畫列表排序
@@ -237,6 +240,15 @@ class MainController(QObject):
         self.model.appSetting.set("font_size", size) # 修改設定
         self.view.changeFontSize(size) # 設定執行
         self.view.right_widget.app_setting_tab.fontSizeChangedDisplay(size) # 顯示調整
+
+    def setCalibrePath(self, path: str) -> None:
+        """設置calibre路徑設定
+
+        Args:
+            path (str): 路徑
+        """
+        self.model.appSetting.set("calibre_path", path) # 修改設定
+        self.view.right_widget.app_setting_tab.calibrePathChangedDisplay(path) # 顯示調整
 
     def changeLang(self, langName: str) -> None:
         """切換語言

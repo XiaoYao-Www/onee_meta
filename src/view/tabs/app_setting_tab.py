@@ -60,6 +60,11 @@ class AppSettingTab(QWidget):
         self.lang_select_label = QLabel(TR.APP_SETTING_TAB["語言選擇："]())
         self.lang_select_combo = QComboBox()
 
+        # 語言選擇
+        carlibre_path_layout = QHBoxLayout()
+        self.carlibre_path_label = QLabel(TR.APP_SETTING_TAB["Calibre路徑："]())
+        self.carlibre_path_edit = QLineEdit()
+
         # 結構組合
         ui_layout = QVBoxLayout()
         ## 布局設置
@@ -82,6 +87,10 @@ class AppSettingTab(QWidget):
         lang_select_layout.addWidget(self.lang_select_label, stretch=1)
         lang_select_layout.addWidget(self.lang_select_combo, stretch=4)
         ui_layout.addLayout(lang_select_layout)
+        ### Calibre路徑
+        carlibre_path_layout.addWidget(self.carlibre_path_label, stretch=1)
+        carlibre_path_layout.addWidget(self.carlibre_path_edit, stretch=4)
+        ui_layout.addLayout(carlibre_path_layout)
         ### 主要輸出
         self.setLayout(ui_layout)
 
@@ -96,6 +105,8 @@ class AppSettingTab(QWidget):
         self.allow_files_edit.textChanged.connect(self.settingAllowFile)
         # 修改語言
         self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.uiSend.langChange.emit(lang))
+        # Calibre路徑設定
+        self.carlibre_path_edit.textChanged.connect(lambda path: SIGNAL_BUS.uiSend.carlibrePathSet.emit(path))
         # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
@@ -143,6 +154,15 @@ class AppSettingTab(QWidget):
         """
         with QSignalBlocker(self.lang_select_combo):
             self.lang_select_combo.setCurrentText(selectedLang)
+
+    def calibrePathChangedDisplay(self, path: str) -> None:
+        """calibre路徑變換顯示
+
+        Args:
+            path (str): 路徑字串
+        """
+        with QSignalBlocker(self.carlibre_path_edit):
+            self.carlibre_path_edit.setText(path)
 
     ###### 設定修改
 

@@ -60,6 +60,7 @@ class _tr:
             "圖片附檔名：": LazyStr("圖片附檔名：", "app_setting_tab"),
             "允許檔案：": LazyStr("允許檔案：", "app_setting_tab"),
             "語言選擇：": LazyStr("語言選擇：", "app_setting_tab"),
+            "Calibre路徑：": LazyStr("Calibre路徑：", "app_setting_tab"),
         }
 
         self._INFO_EDITOR_TAB = {

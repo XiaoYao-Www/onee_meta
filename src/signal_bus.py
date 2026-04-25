@@ -15,6 +15,7 @@ class _UISendSignals(QObject):
     imgExtensionSet = Signal(list)
     allowFileSet = Signal(list)
     langChange = Signal(str)
+    carlibrePathSet = Signal(str)
 
     def __init__(self):
         super().__init__()

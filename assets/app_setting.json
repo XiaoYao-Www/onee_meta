@@ -11,5 +11,6 @@
     ],
     "allow_files": [
         ".nomedia"
-    ]
+    ],
+    "calibre_path": ""
 }

@@ -36,6 +36,7 @@ class MainModel():
             "allow_files": old_setting.get("allow_files", [ # 允許檔案
                 ".nomedia",
             ]),
+            "calibre_path": old_setting.get("calibre_path", ""), # Calibre路徑
         })
         ## 運行時資料儲存
         self.runningStore = DataStore()
