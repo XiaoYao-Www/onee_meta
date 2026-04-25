@@ -1,42 +1,56 @@
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt
 
 class AspectRatioLabel(QLabel):
     def __init__(self, content=None):
         super().__init__()
         
-        # 1. 初始化變數
         self.original_pixmap = None
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        # 設定 MinimumSize 避免 Layout 縮小時將 Label 壓縮到消失
         self.setMinimumSize(1, 1)
 
-        # 2. 判斷傳入的是 QPixmap 還是字串 (或 None)
         if isinstance(content, QPixmap):
-            self.original_pixmap = content
-            self.update_pixmap()
+            self.setPixmap(content)
         elif isinstance(content, str):
-            self.setText(content)  # 如果是字串，直接顯示文字
+            self.setText(content)
         
-    def setPixmap(self, p):
-        # 確保外部呼叫 setPixmap 時能更新原始圖檔
-        if isinstance(p, QPixmap):
-            self.original_pixmap = p
-            self.update_pixmap()
-        else:
-            super().setPixmap(p)
+    def setPixmap(self, p: QPixmap | QImage):
+        """重新定義 setPixmap，儲存原始圖檔並觸發更新"""
+        if not p or p.isNull():
+            self.original_pixmap = None
+            super().setPixmap(QPixmap())
+            return
+
+        self.original_pixmap = p
+        self.update_pixmap()
 
     def update_pixmap(self):
-        # 這裡的邏輯就不會報錯了，因為 original_pixmap 只會是 QPixmap 或 None
+        """執行高品質縮放的核心邏輯"""
         if self.original_pixmap and not self.original_pixmap.isNull():
+            # --- 關鍵：處理高 DPI 畫質 ---
+            # 獲取當前螢幕的縮放比例 (例如 1.5 或 2.0)
+            dpr = self.devicePixelRatioF() 
+            
+            # 1. 計算目標物理尺寸 (邏輯尺寸 * 比例)
+            target_size = self.size() * dpr
+            
+            # 2. 進行高品質縮放
             scaled = self.original_pixmap.scaled(
-                self.size(), 
+                target_size, 
                 Qt.AspectRatioMode.KeepAspectRatio, 
-                Qt.TransformationMode.SmoothTransformation
+                Qt.TransformationMode.SmoothTransformation # 平滑演算法
             )
+            
+            # 3. 告訴圖片它現在的像素密度是多少，這能防止它被系統二度拉伸
+            scaled.setDevicePixelRatio(dpr)
+            
+            # 呼叫父類的 setPixmap 顯示結果
             super().setPixmap(scaled)
 
     def resizeEvent(self, event):
+        """當 Label 尺寸改變時重新計算縮放"""
         if self.original_pixmap:
             self.update_pixmap()
         super().resizeEvent(event)

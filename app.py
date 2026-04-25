@@ -3,7 +3,7 @@
 #####
 import sys
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QTranslator
+from PySide6.QtCore import QTranslator, Qt
 from PySide6.QtGui import QIcon
 # 自訂庫
 import src.app_config as APP_CONFIG
@@ -12,6 +12,8 @@ from src.view.main_view import MainView
 from src.controller.main_controller import MainController
 
 if __name__ == "__main__":
+    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+
     # 1. 應用初始化
     application = QApplication(sys.argv)
     application.setWindowIcon(QIcon(APP_CONFIG.appIconPath))

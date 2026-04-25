@@ -15,7 +15,7 @@ appIconPath = "assets/icon.png"
 # 翻譯檔位置
 translationFilePath = "assets/translations"
 # 版本
-appVersion = "1.2.0"
+appVersion = "1.2.1"
 # 漫畫壓縮檔副檔名
 compressionComicExt = (".zip", ".cbz")
 # info_editor_tab 配置
