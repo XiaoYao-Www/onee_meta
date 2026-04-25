@@ -16,3 +16,4 @@ class ComicPlaceholderData(TypedDict):
     day: str # 日
     date: str # 完整日期 (YYYY-MM-DD)
     clear_old_title: str # 整理過的舊名稱
+    image_count: int # 圖片數量

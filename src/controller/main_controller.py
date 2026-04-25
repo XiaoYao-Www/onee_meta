@@ -159,7 +159,8 @@ class MainController(QObject):
                 "month": f"{now.month:02d}",
                 "day": f"{now.day:02d}",
                 "date": now.strftime("%Y-%m-%d"),
-                "clear_old_title": cast(str, comic_data["xml_comic_info"]["fields"].get("base", {}).get("Title", "")).replace(" 🔒", "").replace("🔒", "")
+                "clear_old_title": cast(str, comic_data["xml_comic_info"]["fields"].get("base", {}).get("Title", "")).replace(" 🔒", "").replace("🔒", ""),
+                "image_count": comic_data["image_count"],
             }
             # 創建針對性Xml資料
             placeholder_editer_data: XmlComicInfo = XmlDataPlaceholderProcess(editer_data, placeholder)

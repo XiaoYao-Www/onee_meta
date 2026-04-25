@@ -58,3 +58,8 @@ class ComicData(TypedDict):
         Xml資料
     """
     xml_comic_info: XmlComicInfo
+
+    """
+       圖片數量
+    """
+    image_count: int

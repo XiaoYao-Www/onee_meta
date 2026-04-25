@@ -10,11 +10,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from typing import Dict, List
+import re
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONFIG
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.model.comic_data import ComicData, XmlComicInfo
+from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 ## 翻譯
 from src.translations import TR
 
@@ -140,7 +142,7 @@ class InfoEditorTab(QWidget):
                     elif isinstance(editor, QTextEdit):
                         editor.setPlainText(display_val)
                     elif isinstance(editor, SmartIntegerField):
-                        if display_val == "{keep}" or display_val == "" or display_val == "-1":
+                        if display_val == "{keep}" or display_val == "":
                             editor.setValue(display_val)
                         else:
                             try:
@@ -167,6 +169,7 @@ class InfoEditorTab(QWidget):
                 "base": {}
             }
         }
+        valid_keys = set(ComicPlaceholderData.__annotations__.keys())
         for section, fields in APP_CONFIG.infoEditorTabConfig.items():
             for field_key, field_cfg in fields.items():
                 info_key = field_cfg["info_key"]
@@ -180,13 +183,13 @@ class InfoEditorTab(QWidget):
                     if val == "{keep}":
                         continue
                 elif isinstance(editor, SmartIntegerField):
-                    state = editor.get_state()
-                    if state == "preserve":
+                    val = editor.value()
+                    if val == "{keep}":
                         continue
-                    elif state == "clear":
-                        val = ""
-                    else:
-                        val = str(editor.value())
+                    elif val.startswith("{"):
+                        match = re.fullmatch(r"\{(\w*)\}", val)
+                        if not match or match.group(1) not in valid_keys:
+                            continue
                 elif isinstance(editor, QLineEdit):
                     val = editor.text()
                     if val == "{keep}":

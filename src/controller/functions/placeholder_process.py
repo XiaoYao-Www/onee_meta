@@ -61,8 +61,7 @@ def XmlDataPlaceholderProcess(xmlData: XmlComicInfo, placeholderData: ComicPlace
     # 處理資料
     for section, fields in APP_CONFIG.infoEditorTabConfig.items():
         for field_key, field_cfg in fields.items():
-            if not(field_cfg["type"] == QLineEdit or field_cfg["type"] == QTextEdit):
-                #　只處理文字類型
+            if not(field_cfg["type"] == QLineEdit or field_cfg["type"] == QTextEdit or field_cfg["type"] == SmartIntegerField):
                 continue
             namespace, key = parseNamespacedKey(field_cfg["info_key"]) # 分析命名空建和鍵值
             if not(namespace in newXmlData["fields"] and key in newXmlData["fields"][namespace]):

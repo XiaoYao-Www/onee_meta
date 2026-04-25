@@ -12,6 +12,26 @@ from src.app_config import compressionComicExt
 from src.model.functions.comic_data_process import xml2Data, data2Xml
 
 
+def countImage(comicPath: str, imgExt: List[str]) -> int:
+    """計算漫畫圖片數量
+    Args:
+       comicPath (str): 漫畫檔案路徑
+        imgExt (List[str]): 漫畫圖片副檔名列表
+    
+    Returns:
+       int: 圖片數量
+    """
+    try:
+        with zipfile.ZipFile(comicPath, 'r') as zf:
+            number = 0
+            for name in zf.namelist():
+                if name.lower().endswith(tuple(imgExt)):
+                    number += 1
+            return number
+
+    except Exception as e:
+        return 0
+
 def readZipXmlComicInfo(comicPath: str) -> tuple[Union[str, None], XmlComicInfo]:
     """讀取封裝漫畫的資訊資料
 
@@ -63,7 +83,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
     
     for root, dirs, files in os.walk(folderPath):
         folder_is_comic = True
-        has_image_file = False
+        image_count = 0
         independent_comic_info_path = ""
 
         # 若包含任何子資料夾，就不是漫畫資料夾
@@ -79,17 +99,20 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 full_path = os.path.join(folderPath, rel_path)
                 new_uuid4 = newUUID4(set(comic_data_cache.keys()))
                 original_path, xml_data = readZipXmlComicInfo(full_path)
+                zip_image_count = countImage(full_path, imgExt)
+
                 comic_data_cache[new_uuid4] = {
                     "uuid": new_uuid4,
                     "comic_path": rel_path,
-                    "xml_comic_info": xml_data
+                    "xml_comic_info": xml_data,
+                    "image_count": zip_image_count,
                 }
                 if original_path != None:
                     comic_data_cache[new_uuid4]["comicInfo_path"] = original_path
                 folder_is_comic = False
             elif f_lower.endswith(tuple(imgExt)):
                 # 圖片檔
-                has_image_file = True
+                image_count += 1
             elif f_lower == "comicinfo.xml":
                 # ComicInfo.xml
                 # 取最後一個
@@ -102,7 +125,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 folder_is_comic = False
 
         # 漫畫資料夾處理
-        if folder_is_comic and has_image_file:
+        if folder_is_comic and image_count > 0:
             rel_path = os.path.relpath(root, folderPath)
             if independent_comic_info_path != "":
                 with open(independent_comic_info_path, "rb") as f:
@@ -117,6 +140,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 "uuid": new_uuid4,
                 "comic_path": rel_path,
                 "xml_comic_info": parsed,
+                "image_count": image_count,
             }
 
     return comic_data_cache
