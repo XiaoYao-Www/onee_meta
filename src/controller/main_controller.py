@@ -103,10 +103,10 @@ class MainController(QObject):
         uuidList: list[str] = self.model.runningStore.get("comic_uuid_list", []) # 取得漫畫uuid總列表
         selectedUuids: list[str] = [uuidList[listIndex] for listIndex in comic] # 選中漫畫UUID列表
         self.model.runningStore.set("selected_comics", selectedUuids) # 儲存選中UUID
-        xmlComicDataList: list[XmlComicInfo] = [
-            cast(ComicData, self.model.comicDataStore.get(uuid)).get("xml_comic_info") for uuid in selectedUuids
+        comicDataList: list[ComicData] = [
+            cast(ComicData, self.model.comicDataStore.get(uuid)) for uuid in selectedUuids
             ] # 選中漫畫資料列表
-        self.view.right_widget.info_editor_tab.setComicInfoData(xmlComicDataList) # 填充顯示
+        self.view.right_widget.info_editor_tab.setComicInfoData(comicDataList) # 填充顯示
 
 
     def selectComicFolder(self, folder: str) -> None:

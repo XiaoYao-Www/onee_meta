@@ -5,12 +5,46 @@ import os
 from typing import List, Dict, Optional, Union
 import zipfile
 import shutil
+from PySide6.QtGui import QPixmap
 # 自訂庫
 from src.classes.model.comic_data import ComicData, XmlComicInfo
 from src.model.functions.uuid import newUUID4
 from src.app_config import compressionComicExt
 from src.model.functions.comic_data_process import xml2Data, data2Xml
 
+
+def readFirstImage(comicPath: str, imgExt: List[str]) -> QPixmap | None:
+    """讀取第一章圖片
+
+    Args:
+        comicPath (str): 漫畫檔案路徑
+        imgExt (List[str]): 圖片副檔名列表
+
+    Returns:
+        QPixmap | None: 第一章圖片
+    """
+    try:
+        with zipfile.ZipFile(comicPath, 'r') as zf:
+            first_path = next(
+                (name for name in sorted(zf.namelist()) if name.lower().endswith(tuple(imgExt))),
+                None
+            )
+
+            if first_path:
+                # 2. 讀取該檔案的二進位內容 (bytes)
+                with zf.open(first_path) as file:
+                    img_data = file.read()
+                
+                # 3. 建立 QPixmap 並從資料中載入
+                pixmap = QPixmap()
+                # loadFromData 會自動偵測圖片格式
+                if pixmap.loadFromData(img_data):
+                    return pixmap
+                    
+        return None
+
+    except Exception as e:
+        return None
 
 def countImage(comicPath: str, imgExt: List[str]) -> int:
     """計算漫畫圖片數量
@@ -84,6 +118,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
     for root, dirs, files in os.walk(folderPath):
         folder_is_comic = True
         image_count = 0
+        first_image = None
         independent_comic_info_path = ""
 
         # 若包含任何子資料夾，就不是漫畫資料夾
@@ -91,7 +126,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
             folder_is_comic = False
 
         # 處理檔案
-        for f in files:
+        for f in sorted(files):
             f_lower = f.lower()
             if f_lower.endswith(compressionComicExt):
                 # 壓縮檔
@@ -100,12 +135,14 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 new_uuid4 = newUUID4(set(comic_data_cache.keys()))
                 original_path, xml_data = readZipXmlComicInfo(full_path)
                 zip_image_count = countImage(full_path, imgExt)
+                zip_first_image = readFirstImage(full_path, imgExt)
 
                 comic_data_cache[new_uuid4] = {
                     "uuid": new_uuid4,
                     "comic_path": rel_path,
                     "xml_comic_info": xml_data,
                     "image_count": zip_image_count,
+                    "first_image": zip_first_image,
                 }
                 if original_path != None:
                     comic_data_cache[new_uuid4]["comicInfo_path"] = original_path
@@ -113,6 +150,13 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
             elif f_lower.endswith(tuple(imgExt)):
                 # 圖片檔
                 image_count += 1
+                if first_image is None:
+                    full_path = os.path.join(root, f)
+                    temp_pixmap = QPixmap(full_path)
+        
+                    # 確認圖片是否真的載入成功
+                    if not temp_pixmap.isNull():
+                        first_image = temp_pixmap
             elif f_lower == "comicinfo.xml":
                 # ComicInfo.xml
                 # 取最後一個
@@ -141,6 +185,7 @@ def readComicFolder(folderPath: str, imgExt: List[str], allowFile: List[str]) ->
                 "comic_path": rel_path,
                 "xml_comic_info": parsed,
                 "image_count": image_count,
+                "first_image": first_image,
             }
 
     return comic_data_cache

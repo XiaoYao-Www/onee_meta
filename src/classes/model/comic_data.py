@@ -1,6 +1,7 @@
 #####
 # 漫畫資料類型
 #####
+from PySide6.QtGui import QPixmap
 from typing import TypedDict, List, Dict, Union, NotRequired
 
 
@@ -63,3 +64,8 @@ class ComicData(TypedDict):
        圖片數量
     """
     image_count: int
+
+    """
+        第一張圖片
+    """
+    first_image: QPixmap | None

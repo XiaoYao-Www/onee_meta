@@ -6,15 +6,17 @@ from PySide6.QtWidgets import (
     QPushButton, QListWidget, QFileDialog, QLineEdit,
     QMessageBox, QComboBox, QAbstractItemView, QTabWidget,
     QTextEdit, QProgressBar, QSpinBox, QScrollArea, QSizePolicy,
-    QToolButton
+    QToolButton, QFrame, QSplitter
 )
-from PySide6.QtCore import Qt
-from typing import Dict, List
+from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve
+from typing import Dict, List, cast
 import re
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONFIG
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
+from src.classes.view.widgets.aspect_ratio_label import AspectRatioLabel
 from src.classes.model.comic_data import ComicData, XmlComicInfo
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 ## 翻譯
@@ -29,6 +31,10 @@ class InfoEditorTab(QWidget):
         self.editors: Dict[str, QLineEdit | SmartIntegerField | QTextEdit | QComboBox] = {}
         self.labels = {}
 
+        # --- 新增側邊欄控制變數 ---
+        self.SIDEBAR_WIDTH = 250
+        self.is_sidebar_expanded = False # 預設縮起
+
         # 初始化 UI
         self.init_ui()
 
@@ -42,8 +48,18 @@ class InfoEditorTab(QWidget):
 
     def init_ui(self):
         """ 初始化UI元件 """
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # 主布局
+        self.main_h_layout = QHBoxLayout(self)
+        self.main_h_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_h_layout.setSpacing(0)
+
+        # 拖動桿
+        self.splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        # 漫畫資料編輯區
+        self.info_edit_widget = QWidget()
+        info_edit_layout = QVBoxLayout(self.info_edit_widget)
+        info_edit_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # 動態創建UI
         for section_key, fields in APP_CONFIG.infoEditorTabConfig.items():
@@ -68,8 +84,8 @@ class InfoEditorTab(QWidget):
 
             toggle_button.toggled.connect(make_toggle_func())
 
-            layout.addWidget(toggle_button)
-            layout.addWidget(scroll)
+            info_edit_layout.addWidget(toggle_button)
+            info_edit_layout.addWidget(scroll)
 
             for field_key, field_cfg in fields.items():
                 hlayout = QHBoxLayout()
@@ -92,9 +108,31 @@ class InfoEditorTab(QWidget):
                 hlayout.addWidget(widget, stretch=7)
                 content_layout.addLayout(hlayout)
                 self.editors[field_cfg["info_key"]] = widget
+    
+        # 4. 右側側邊欄
+        self.right_sidebar_layout = QVBoxLayout()
+        self.right_sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # 加入主 Layout
-        self.setLayout(layout)
+        self.image_label = AspectRatioLabel("圖片載入中...")
+        self.image_label.setMinimumSize(200, 200)
+        self.image_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.right_sidebar_layout.addWidget(self.image_label)
+
+        self.right_sidebar_widget = QWidget()
+        self.right_sidebar_widget.setMinimumWidth(0) # 必須為 0 才能完全收合
+        self.right_sidebar_widget.setLayout(self.right_sidebar_layout)
+        
+        # 5. 將元件加入 Splitter
+        self.splitter.addWidget(self.info_edit_widget)
+        self.splitter.addWidget(self.right_sidebar_widget)
+
+        # 6. 設定初始比例 (左側佔滿，右側 0)
+        self.splitter.setSizes([900, 100]) 
+        self.splitter.setStretchFactor(0, 1) # 左側優先吃掉空間
+        self.splitter.setStretchFactor(1, 0)
+
+        # 組合到主佈局
+        self.main_h_layout.addWidget(self.splitter)
 
     def signal_connection(self):
         """ 訊號連結 """
@@ -108,14 +146,15 @@ class InfoEditorTab(QWidget):
 
     ### 功能函式 ###
 
-    def setComicInfoData(self, comicData: List[XmlComicInfo]) -> None:
+    def setComicInfoData(self, comicData: List[ComicData]) -> None:
         """多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
 
         Args:
-            comicData (List[XmlComicInfo]): 漫畫資料數據列表
+            comicData (List[ComicInfo]): 漫畫資料列表
         """
         self.updating_fields = True
         try:
+            # 更新資料欄位
             for section, fields in APP_CONFIG.infoEditorTabConfig.items():
                 for field_key, field_cfg in fields.items():
                     info_key = field_cfg["info_key"]
@@ -123,7 +162,7 @@ class InfoEditorTab(QWidget):
 
                     for d in comicData:
                         # 每筆資料從 fields 中抓取對應欄位
-                        val = d.get("fields", {}).get("base", {}).get(info_key, "") # 目前只有 base
+                        val = d.get("xml_comic_info").get("fields", {}).get("base", {}).get(info_key, "") # 目前只有 base
                         values.append(val)
 
                     if not values:
@@ -151,6 +190,15 @@ class InfoEditorTab(QWidget):
                                 editor.setValue("{keep}")
                     elif editor != None:
                         editor.setText(display_val)
+            
+            # 更新圖片
+            if len(comicData) > 1:
+                self.image_label.setText("多本漫畫無法顯示圖片")
+            elif not(comicData[0].get("first_image") is None):
+                self.image_label.setPixmap(cast(QPixmap, comicData[0].get("first_image")))
+            else:
+                self.image_label.setText("無法顯示圖片")
+
         finally:
             self.updating_fields = False
 
