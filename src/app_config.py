@@ -15,7 +15,7 @@ appIconPath = "assets/icon.png"
 # 翻譯檔位置
 translationFilePath = "assets/translations"
 # 版本
-appVersion = "1.2.2"
+appVersion = "1.2.3"
 # 漫畫壓縮檔副檔名
 compressionComicExt = (".zip", ".cbz")
 # info_editor_tab 配置
@@ -70,6 +70,11 @@ infoEditorTabConfig = {
             "type": QLineEdit,
             "label": "格式描述",
             "info_key": "Format",
+        },
+        "Language": {
+            "type": QLineEdit,
+            "label": "語言",
+            "info_key": "Language",
         },
         "LanguageISO": {
             "type": QLineEdit,

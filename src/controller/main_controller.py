@@ -4,10 +4,11 @@
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
 from datetime import datetime
-from typing import List, cast
+from typing import List, cast, Any
 import os
 import copy
 # 自訂庫
+from src.classes.calibre_scanner import CalibreSidecar
 from src.model.main_model import MainModel
 from src.view.main_view import MainView
 from src.signal_bus import SIGNAL_BUS
@@ -70,6 +71,7 @@ class MainController(QObject):
         SIGNAL_BUS.uiSend.selectComicFolder.connect(self.selectComicFolder) # 選擇漫畫資料夾
         SIGNAL_BUS.uiSend.comicListSelected.connect(self.selectComic) # 漫畫選擇
         SIGNAL_BUS.uiSend.startProcess.connect(self.startProcess) # 開始處理
+        SIGNAL_BUS.uiSend.runScanner.connect(self.runScanner) # 抓取漫畫資料
         # 應用設定
         SIGNAL_BUS.uiSend.fontSizeSet.connect(self.setAppFontSize) # 字體大小切換
         SIGNAL_BUS.uiSend.imgExtensionSet.connect(self.setImageExt) # 圖片附檔名設定
@@ -85,6 +87,21 @@ class MainController(QObject):
     ### 功能性函 ###
 
     ###### 應用功能
+
+    def runScanner(self, name: str, author: str, ibsn: str) -> None:
+        scanner = CalibreSidecar(self.model.appSetting.get("calibre_path"))
+        self.view.loading.show()
+        self.application.processEvents() # 刷新UI，確保Loading顯示
+        data = scanner.fetch_metadata(
+            title=name if (name != "") else None,
+            authors=author if (author != "") else None,
+            isbn=ibsn if (ibsn != "") else None,
+        )
+        if data is None:
+            self.view.loading.close()
+            return
+        self.view.right_widget.info_editor_tab.update_data_cards(data)
+        self.view.loading.close()
 
     def selectComic(self, comic: list[int]) -> None:
         """漫畫選擇

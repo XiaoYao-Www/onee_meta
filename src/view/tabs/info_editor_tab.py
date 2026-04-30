@@ -6,21 +6,24 @@ from PySide6.QtWidgets import (
     QPushButton, QListWidget, QFileDialog, QLineEdit,
     QMessageBox, QComboBox, QAbstractItemView, QTabWidget,
     QTextEdit, QProgressBar, QSpinBox, QScrollArea, QSizePolicy,
-    QToolButton, QFrame, QSplitter
+    QToolButton, QFrame, QSplitter, QGridLayout,
 )
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Signal
 from typing import Dict, List, cast
 import re
 # 自訂庫
+from src.classes.calibre_scanner import CalibreSidecar
 from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONFIG
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.view.widgets.aspect_ratio_label import AspectRatioLabel
 from src.classes.model.comic_data import ComicData, XmlComicInfo
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
+from src.classes.view.widgets.data_card import DataCard
 ## 翻譯
 from src.translations import TR
+
 
 class InfoEditorTab(QWidget):
     def __init__(self):
@@ -29,7 +32,7 @@ class InfoEditorTab(QWidget):
         self.updating_fields = False
         self.toggle_buttons = {}
         self.editors: Dict[str, QLineEdit | SmartIntegerField | QTextEdit | QComboBox] = {}
-        self.labels = {}
+        self.labels: Dict[str,QLabel] = {}
 
         # --- 新增側邊欄控制變數 ---
         self.SIDEBAR_WIDTH = 250
@@ -110,16 +113,65 @@ class InfoEditorTab(QWidget):
                 self.editors[field_cfg["info_key"]] = widget
     
         # 4. 右側側邊欄
-        self.right_sidebar_layout = QVBoxLayout()
-        self.right_sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # 建立 Splitter 設為垂直方向
+        self.right_splitter = QSplitter(Qt.Orientation.Vertical)
 
+        # 上方元件
         self.image_label = AspectRatioLabel("圖片載入中...")
-        self.image_label.setMinimumSize(200, 200)
-        self.image_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.right_sidebar_layout.addWidget(self.image_label)
+        self.right_splitter.addWidget(self.image_label)
+
+        # 下方元件
+        self.info_scanner_container = QWidget()
+        self.info_scanner_layout = QVBoxLayout(self.info_scanner_container)
+        self.info_scanner_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        ##### 右側資訊抓取 #####
+
+        ##### 搜尋區
+        self.info_scanner_search = QGridLayout()
+        self.info_scanner_search.setContentsMargins(0, 0, 0, 0)
+        self.info_scanner_search.setSpacing(0)
+        self.info_scanner_search.addWidget(QLabel("書名"), 0, 0)
+        self.info_scanner_search_bookname = QLineEdit()
+        self.info_scanner_search.addWidget(self.info_scanner_search_bookname, 0, 1)
+        self.info_scanner_search.addWidget(QLabel("作者"), 1, 0)
+        self.info_scanner_search_author = QLineEdit()
+        self.info_scanner_search.addWidget(self.info_scanner_search_author, 1, 1)
+        self.info_scanner_search.addWidget(QLabel("ISBN"), 3, 0)
+        self.info_scanner_search_isbn = QLineEdit()
+        self.info_scanner_search.addWidget(self.info_scanner_search_isbn, 3, 1)
+        self.info_scanner_search_button = QPushButton("搜尋")
+        self.info_scanner_search.addWidget(self.info_scanner_search_button, 4, 0, 1, 2)
+
+        ##### 列表區
+
+        self.info_scanner_scroll_area = QScrollArea()
+        self.info_scanner_scroll_area.setWidgetResizable(True)
+        self.info_scanner_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.info_scanner_scroll_content = QWidget()
+        self.info_scanner_scroll_content_layout = QVBoxLayout(self.info_scanner_scroll_content)
+        self.info_scanner_scroll_content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.info_scanner_scroll_area.setWidget(self.info_scanner_scroll_content)
+
+
+        self.info_scanner_layout.addLayout(self.info_scanner_search)
+        self.info_scanner_layout.addWidget(self.info_scanner_scroll_area)
+
+        #######################
+
+        self.right_splitter.addWidget(self.info_scanner_container)
+
+        # 設定初始比例 (例如 7:3)
+        self.right_splitter.setStretchFactor(0, 7)
+        self.right_splitter.setStretchFactor(1, 3)
+
+        # 最後將 Splitter 加入右側主佈局
+        self.right_sidebar_layout = QVBoxLayout()
+        self.right_sidebar_layout.addWidget(self.right_splitter)
 
         self.right_sidebar_widget = QWidget()
-        self.right_sidebar_widget.setMinimumWidth(0) # 必須為 0 才能完全收合
         self.right_sidebar_widget.setLayout(self.right_sidebar_layout)
         
         # 5. 將元件加入 Splitter
@@ -136,7 +188,14 @@ class InfoEditorTab(QWidget):
 
     def signal_connection(self):
         """ 訊號連結 """
-        pass
+        self.info_scanner_search_button.clicked.connect(
+            lambda: SIGNAL_BUS.uiSend.runScanner.emit(
+                self.info_scanner_search_bookname.text(),
+                self.info_scanner_search_author.text(), 
+                self.info_scanner_search_isbn.text()
+            )
+        )
+
         # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
@@ -146,6 +205,47 @@ class InfoEditorTab(QWidget):
 
     ### 功能函式 ###
 
+    def resolve_card_element_clicked(self, filed_name: str, text_value: str):
+        """ 解析卡片元素被點擊時的資訊 """
+        if filed_name == "Title":
+            cast(QLineEdit, self.editors["Title"]).setText(text_value)
+        elif filed_name == "Author(s)":
+            cast(QLineEdit, self.editors["Writer"]).setText(text_value)
+        elif filed_name == "Publisher":
+            cast(QLineEdit, self.editors["Publisher"]).setText(text_value)
+        elif filed_name == "Languages":
+            cast(QLineEdit, self.editors["Language"]).setText(text_value)
+        elif filed_name == "Identifiers":
+            cast(QLineEdit, self.editors["Notes"]).setText(text_value)
+        elif filed_name == "Tag":
+            tags_list = [t.strip() for t in text_value.split(',')]
+            for tag in tags_list:
+                now_tags = cast(QLineEdit, self.editors["Tags"]).text()
+                if now_tags == "":
+                    cast(QLineEdit, self.editors["Tags"]).setText(tag)
+                elif not(tag in now_tags):
+                    cast(QLineEdit, self.editors["Tags"]).setText(now_tags + "," + tag)
+
+
+    def clear_data_cards(self):
+        """ 清空目前列表中的所有資料卡片 """
+        # 反向迴圈刪除 Layout 中的 Widget
+        while self.info_scanner_scroll_content_layout.count():
+            item = self.info_scanner_scroll_content_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    def update_data_cards(self, data_list):
+        """ 刷新函數：清空舊資料並載入新資料 """
+        self.clear_data_cards()
+        
+        # 逐筆建立資料卡片並加入佈局
+        for item in data_list:
+            card = DataCard(item)
+            card.element_clicked.connect(self.resolve_card_element_clicked)
+            self.info_scanner_scroll_content_layout.addWidget(card)
+
     def setComicInfoData(self, comicData: List[ComicData]) -> None:
         """多筆資料設定：若欄位值一致就顯示該值，否則顯示 {keep}
 
@@ -154,6 +254,13 @@ class InfoEditorTab(QWidget):
         """
         self.updating_fields = True
         try:
+            if len(comicData) > 1:
+                self.right_sidebar_widget.setVisible(False)
+            else:
+                self.right_sidebar_widget.setVisible(True)
+                self.info_scanner_search_bookname.setText(comicData[0]["comic_path"])
+                self.clear_data_cards()
+
             # 更新資料欄位
             for section, fields in APP_CONFIG.infoEditorTabConfig.items():
                 for field_key, field_cfg in fields.items():

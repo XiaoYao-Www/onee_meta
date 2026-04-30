@@ -16,6 +16,7 @@ class _UISendSignals(QObject):
     allowFileSet = Signal(list)
     langChange = Signal(str)
     carlibrePathSet = Signal(str)
+    runScanner = Signal(str, str, str)
 
     def __init__(self):
         super().__init__()

@@ -239,7 +239,7 @@ print(json.dumps(result, ensure_ascii=False, indent=2))
 
 # ====================== 使用範例 ======================
 if __name__ == "__main__":
-    path = r"C:\Users\lll09\Downloads\Calibre Portable\Calibre"
+    path = r"C:\no_installation_required\Calibre Portable\Calibre"
     scanner = CalibreSidecar(custom_path=path)
 
     print("開始聚合抓取元數據（會同時查詢多個來源）...")
@@ -248,9 +248,7 @@ if __name__ == "__main__":
 
     # 方法一：使用全部已安裝的插件進行聚合搜索
     opf_content = scanner.fetch_metadata(
-        title="あらあらママと性交",
-        authors="HANABi",
-        allowed_plugins=["E-hentai Galleries"]
+        title="Author(s)'",
     )
 
     if opf_content:

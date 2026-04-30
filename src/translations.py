@@ -74,6 +74,7 @@ class _tr:
             "卷/冊號": LazyStr("卷/冊號", "info_editor_tab"),
             "頁數": LazyStr("頁數", "info_editor_tab"),
             "格式描述": LazyStr("格式描述", "info_editor_tab"),
+            "語言": LazyStr("語言", "info_editor_tab"),
             "語言 (ISO 639)": LazyStr("語言 (ISO 639)", "info_editor_tab"),
             "替代版本": LazyStr("替代版本", "info_editor_tab"),
             "替代系列名稱": LazyStr("替代系列名稱", "info_editor_tab"),
