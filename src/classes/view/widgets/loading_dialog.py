@@ -32,24 +32,21 @@ class LoadingDialog(QDialog):
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setStyleSheet("""
             QProgressBar {
-                background: rgba(255, 255, 255, 0.15);
+                background: rgba(255, 255, 255, 0.08);
                 border: none;
-                border-radius: 9px;
+                border-radius: 7px;
             }
             QProgressBar::chunk {
-                background: qlineargradient(
-                    x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 #4facfe, stop: 1 #00f2fe
-                );
-                border-radius: 9px;
+                background: #7c7c80;
+                border-radius: 7px;
             }
         """)
         layout.addWidget(self.progress_bar)
 
         self.setStyleSheet("""
             LoadingDialog {
-                background-color: rgba(30, 30, 40, 220);
-                border-radius: 12px;
+                background-color: rgba(28, 28, 30, 230);
+                border-radius: 14px;
             }
         """)
         self.resize(LOADING_DIALOG_WIDTH, LOADING_DIALOG_HEIGHT)

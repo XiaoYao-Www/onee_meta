@@ -1,6 +1,7 @@
 #####
 # 主控制器 — 非同步版本
 #####
+import os
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
 from typing import List, Optional, cast
@@ -14,6 +15,7 @@ from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
 from src.controller.batch_processor import BatchProcessor
 from src.controller.async_worker import run_async
+from src.classes.view.widgets.comic_reader import ComicReaderWidget
 from src.logging_config import get_logger
 
 _log = get_logger(__name__)
@@ -62,6 +64,7 @@ class MainController(QObject):
         bus.uiSend.selectComicFolder.connect(self.selectComicFolder)
         bus.uiSend.comicListSelected.connect(self.selectComic)
         bus.uiSend.startProcess.connect(self.startProcess)
+        self.view.left_widget.comic_list.doubleClicked.connect(self.openComicReader)
         bus.uiSend.runScanner.connect(self.runScanner)
         bus.uiSend.fontSizeSet.connect(self.setAppFontSize)
         bus.uiSend.imgExtensionSet.connect(self.setImageExt)
@@ -74,11 +77,38 @@ class MainController(QObject):
     # ── 輔助：追蹤 async worker ─────────────────────────
 
     def _track(self, thread, worker) -> None:
-        """保存 async worker 引用，完成後自動清理"""
+        """保存 async worker 引用，執行緒完全退出後自動清理"""
         self._async_workers.append((thread, worker))
-        worker.signals.finished.connect(lambda: self._async_workers.clear())
+
+        def _on_thread_finished():
+            """QThread 已完全停止 — 安全釋放引用"""
+            if (thread, worker) in self._async_workers:
+                self._async_workers.remove((thread, worker))
+
+        # 綁在 thread.finished 而非 worker.signals.finished：
+        # 前者保證 thread 已完全退出，後者只是工作函式執行完
+        thread.finished.connect(_on_thread_finished)
 
     # ── 應用功能 ────────────────────────────────────────
+
+    def openComicReader(self, index) -> None:
+        """雙擊漫畫列表 — 開啟閱讀器"""
+        row = index.row()
+        uuid_list: list[str] = self.model.runningStore.get("comic_uuid_list", [])
+        if row < 0 or row >= len(uuid_list):
+            return
+
+        uuid = uuid_list[row]
+        comic_data = self.model.comicDataStore.get(uuid)
+        if comic_data is None:
+            return
+
+        root = self.model.runningStore.get("comic_folder_path", "")
+        full_path = os.path.join(root, comic_data["comic_path"])
+        _log.info("開啟閱讀器: %s", full_path)
+
+        reader = ComicReaderWidget(full_path, parent=self.view)
+        reader.exec()
 
     def runScanner(self, name: str, author: str, isbn: str) -> None:
         """非同步：在背景執行 Calibre 元數據搜尋"""

@@ -12,11 +12,11 @@ class ClickableUrlLabel(QLabel):
         self.url = url
         self.setStyleSheet("""
             QLabel {
-                color: #0366d6;  /* GitHub 链接蓝 */
+                color: #7c7c80;
                 text-decoration: underline;
             }
             QLabel:hover {
-                color: #1a7f37;  /* GitHub 悬停绿 */
+                color: #e5e5e5;
             }
         """)
         self.setCursor(Qt.CursorShape.PointingHandCursor)

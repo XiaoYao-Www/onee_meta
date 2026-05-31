@@ -55,10 +55,10 @@ class MainView(QWidget):
         self.status_bar.setObjectName("statusBar")
         self.status_bar.setStyleSheet("""
             QLabel#statusBar {
-                background: #181825;
-                border-top: 1px solid #45475a;
-                padding: 4px 12px;
-                color: #a6adc8;
+                background: #1c1c1e;
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                padding: 4px 14px;
+                color: #8e8e93;
                 font-size: 12px;
             }
         """)
