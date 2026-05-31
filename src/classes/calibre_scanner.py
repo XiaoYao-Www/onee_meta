@@ -240,6 +240,9 @@ print(json.dumps(result, ensure_ascii=False, indent=2))
 
             return entries
 
+        except subprocess.TimeoutExpired:
+            _log.warning("Calibre metadata 查詢超時 (%d 秒): %s", timeout, title)
+            return None
         except Exception as e:
             _log.exception("執行 fetch-ebook-metadata 時發生錯誤")
             return None

@@ -75,9 +75,9 @@ class ComicListView(QWidget):
 
         # 結構組合
         self.ui_layout = QVBoxLayout()
-        ## 布局配置
-        self.ui_layout.setContentsMargins(0, 0, 0, 0)
-        self.ui_layout.setSpacing(4)
+        ## 布局配置 — 留呼吸空間
+        self.ui_layout.setContentsMargins(2, 2, 2, 2)
+        self.ui_layout.setSpacing(6)
         ## 添加內容
         self.ui_layout.addWidget(self.comic_path_button)
         self.ui_layout.addLayout(info_layout)

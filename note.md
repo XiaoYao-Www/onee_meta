@@ -1,24 +1,127 @@
-# 編譯命令
+# Onee Meta 開發路線圖 v2.0
+
+## 願景
+
+Onee Meta 從「漫畫元數據編輯器」進化為「漫畫收藏全生命週期管理工具」——從匯入、整理、瀏覽到匯出的一站式解決方案。
+
+---
+
+## 近期 (1-2 個月)
+
+### 1. 漫畫瀏覽器
+
+| 功能 | 說明 |
+|------|------|
+| 縮圖網格檢視 | 以縮圖卡片展示漫畫，取代純文字列表 |
+| 內建漫畫閱讀器 | 點兩下漫畫直接開啟閱讀器，支援 CBZ/ZIP 翻頁瀏覽 |
+| 封面管理 | 自動提取壓縮檔第一個圖片為封面，支援手動更換 |
+
+### 2. 元數據功能強化
+
+| 功能 | 說明 |
+|------|------|
+| ComicRack 全欄位支援 | 補全 ComicInfo.xml 所有 60+ 欄位 |
+| 自動標籤引擎 | 根據檔名、資料夾名稱、Calibre 資料自動推斷標籤 |
+| 批次重新命名 | `{series} - c{number}.cbz` 格式批次更名 |
+| 中繼資料匯入/匯出 | CSV、JSON 格式匯出，便於備份與外部編輯 |
+
+### 3. 使用者體驗
+
+| 功能 | 說明 |
+|------|------|
+| 鍵盤快捷鍵 | Ctrl+O 開啟資料夾、Ctrl+S 儲存、Ctrl+F 搜尋 |
+| 搜尋/過濾 | 即時過濾漫畫列表（依標題、系列、標籤、作者） |
+| 復原/重做 | 批次寫入前自動備份管理，可回復到前 N 個版本 |
+
+---
+
+## 中期 (3-6 個月)
+
+### 4. 收藏庫管理
+
+| 功能 | 說明 |
+|------|------|
+| 多重收藏庫 | 支援多個根目錄（本地、外接硬碟、NAS） |
+| 收藏庫掃描 | 增量掃描，只處理新增/修改的檔案 |
+| 重複偵測 | 根據檔案 hash 或 ComicInfo 內容偵測重複 |
+
+### 5. 工程化
+
+| 專案 | 說明 |
+|------|------|
+| pytest 測試套件 | 單元測試（I/O mock）+ 整合測試 |
+| mypy strict | 全面型別檢查 |
+| GitHub CI | PR 自動測試 + lint + build 驗證 |
+| 使用者文件 | 功能說明 / 教學影片 / 常見問題 |
+
+### 6. 進階批次處理
+
+| 功能 | 說明 |
+|------|------|
+| 規則引擎 | IF-THEN 條件式規則（如：若 Tags 包含 "Yuri" 則 Series="百合"） |
+| 腳本化 | Python 腳本批次處理，支援 CLI 模式 |
+| 排程任務 | 定期自動掃描收藏庫 |
+
+---
+
+## 遠期 (6-12 個月)
+
+### 7. 生態系整合
+
+| 功能 | 說明 |
+|------|------|
+| Calibre 雙向同步 | 讀取/寫入 Calibre 資料庫 |
+| LANraragi / Komga 整合 | 直接與自架漫畫伺服器同步 |
+| ComicInfo 標準化 | 驗證 ComicInfo.xml 是否符合規範，自動修復 |
+
+### 8. 外掛系統
+
+| 功能 | 說明 |
+|------|------|
+| Plugin API | 第三方插件可註冊自訂處理步驟、元數據來源 |
+| 插件市場 | 內建瀏覽/安裝社群插件 |
+
+### 9. 專業功能
+
+| 功能 | 說明 |
+|------|------|
+| 差異對比 | 修改前/後 ComicInfo.xml 差異高亮顯示 |
+| 版本歷史 | 每次改動自動備份，可回溯任意版本 |
+| 統計儀表板 | 收藏總數、系列分佈、標籤雲、作者統計 |
+| 多視窗/多分頁 | 同時編輯多部漫畫的元數據 |
+
+---
+
+## 技術架構方針
+
 ```
-nuitka app.py ^
-  --standalone ^
-  --show-progress ^
-  --disable-console ^
-  --remove-output ^
-  --noinclude-default-mode=nofollow ^
-  --windows-icon-from-ico=assets/icon.png ^
-  --include-data-dir=assets=assets ^
-  --enable-plugin=pyside6 ^
-  --include-qt-plugins=sensible ^
-  --lto=yes ^
-  -j 20 ^
-  --output-dir=dev/build
+onee-meta/
+├── src/
+│   ├── model/          # 資料層（已有 DataStore, ComicListModel）
+│   ├── view/           # UI 層（QWidget + QSS）
+│   │   ├── widgets/    # 可復用 Widget（縮圖卡、閱讀器、進度條）
+│   │   └── tabs/       # 分頁（編輯/設定/關於）
+│   ├── controller/     # 控制層（async_worker, batch_processor）
+│   ├── services/       # ⬅️ 新增：外部服務層
+│   │   ├── calibre/    # Calibre 整合
+│   │   ├── scanner/    # 收藏庫掃描器
+│   │   └── export/     # CSV/JSON 匯出匯入
+│   ├── plugins/        # ⬅️ 新增：插件系統
+│   ├── common/         # 通用工具
+│   └── logging_config.py
+├── tests/              # ⬅️ 新增：測試
+├── docs/               # ⬅️ 新增：文件
+├── assets/
+│   ├── style.qss       # 暗色主題樣式
+│   └── icons/          # ⬅️ 新增：SVG 圖示集
+└── pyproject.toml
 ```
 
-# 生成翻譯檔
-```
-pyside6-lupdate lupdate_stub_help.py -ts zh_TW.ts -locations none
-```
-```
-pyside6-lrelease zh_TW.ts
-```
+## 當前景點對照
+
+| 類別 | 已實現 | 待實現 |
+|------|--------|--------|
+| 效能 | AsyncWorker、ThreadPoolExecutor、32 workers 平行載入 | 增量掃描、延遲載入 |
+| UI | 暗色主題、狀態列、進度條 | 縮圖網格、閱讀器、快捷鍵 |
+| 可靠性 | 錯誤日誌、None guard、signal 生命週期管理 | 單元測試、型別檢查、CI |
+| 功能 | 批次佔位符、Calibre 搜尋、多語言 | 更名、搜尋、規則引擎、匯出 |

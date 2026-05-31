@@ -3,7 +3,7 @@
 #####
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QMessageBox, QSplitter,
-    QTextEdit,
+    QTextEdit, QLabel, QHBoxLayout,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
@@ -19,96 +19,82 @@ from src.classes.view.widgets.loading_dialog import LoadingDialog
 from src.translations import TR
 from src.model.main_model import MainModel
 
+
 class MainView(QWidget):
     """主窗口
     """
     def __init__(self):
-        """初始化
-        """
         super().__init__()
-        # 初始化 UI
+
+        # 狀態列文字
+        self._status_text = "就緒"
+
         self.init_ui()
 
-        # 應用設定
         self.setWindowTitle(TR.MAIN_VIEW["Onee Meta"]())
         self.setWindowIcon(QIcon(APP_CONGIF.appIconPath))
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.changeFontSize(DEFAULT_FONT_SIZE)
 
-        # 訊號連接
         self.signal_connection()
 
-        
-    ### 初始化函式 ###
-    
+    ### 初始化 ###
+
     def init_ui(self):
-        """UI初始化
-        """
-        # 左右分割
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        ## 漫畫列表 
         self.left_widget = ComicListView()
-        ## 右邊元件
         self.right_widget = OperationArea()
-        ## 放入 Splitter
         splitter.addWidget(self.left_widget)
         splitter.addWidget(self.right_widget)
-        ## 設定初始大小比例 (像素)
         splitter.setSizes(list(MAIN_SPLITTER_SIZES))
 
-        # 處理中提示
         self.loading = LoadingDialog(TR.MAIN_VIEW["處理中"]())
 
-        # 結構組合
+        # 狀態列
+        self.status_bar = QLabel(self._status_text)
+        self.status_bar.setObjectName("statusBar")
+        self.status_bar.setStyleSheet("""
+            QLabel#statusBar {
+                background: #181825;
+                border-top: 1px solid #45475a;
+                padding: 4px 12px;
+                color: #a6adc8;
+                font-size: 12px;
+            }
+        """)
+        self.status_bar.setFixedHeight(28)
+
+        # 主佈局
         self.ui_layout = QVBoxLayout()
+        self.ui_layout.setContentsMargins(8, 8, 8, 0)  # 左右上留8px呼吸空間
+        self.ui_layout.setSpacing(6)
         self.ui_layout.addWidget(splitter)
+        self.ui_layout.addWidget(self.status_bar)
         self.setLayout(self.ui_layout)
 
     def signal_connection(self):
-        """信號連接
-        """
-        # 訊息框
         SIGNAL_BUS.uiRevice.sendCritical.connect(self.sendCritical)
         SIGNAL_BUS.uiRevice.sendInformation.connect(self.sendInformation)
-        # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
-    ### 功能性函式 ###
+    ### 功能 ###
 
-    ###### 應用設定
+    def setStatus(self, text: str) -> None:
+        """設定狀態列文字"""
+        self._status_text = text
+        self.status_bar.setText(text)
 
     def changeFontSize(self, size: int) -> None:
-        """更改字型大小
-
-        Args:
-            size (int): 大小
-        """
         font = self.font()
         font.setPointSize(size)
         self.setFont(font)
 
     def retranslateUi(self):
-        """UI 語言刷新
-        """
         self.setWindowTitle(TR.MAIN_VIEW["Onee Meta"]())
         self.loading.infoLabel.setText(TR.MAIN_VIEW["處理中"]())
 
-    ###### 傳送訊息框
-
     def sendCritical(self, title: str, text: str) -> None:
-        """顯示警告訊息
-
-        Args:
-            title (str): 標題
-            text (str): 內文
-        """
         QMessageBox.critical(self, title, text)
 
     def sendInformation(self, title: str, text: str) -> None:
-        """顯示提示訊息
-
-        Args:
-            title (str): 標題
-            text (str): 內文
-        """
         QMessageBox.information(self, title, text)

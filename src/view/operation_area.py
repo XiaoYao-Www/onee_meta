@@ -57,12 +57,13 @@ class OperationArea(QWidget):
 
         # 執行按鈕
         self.start_button = QPushButton(TR.OPERATION_AREA["儲存編輯"]())
+        self.start_button.setObjectName("startButton")
 
         # 結構組裝
         self.ui_layout = QVBoxLayout()
         ## 布局設定
-        self.ui_layout.setContentsMargins(0, 0, 0 ,0)
-        self.ui_layout.setSpacing(4)
+        self.ui_layout.setContentsMargins(4, 4, 4, 6)
+        self.ui_layout.setSpacing(8)
         self.ui_layout.setAlignment(Qt.AlignmentFlag.AlignBottom)
         ## 添加內容
         self.ui_layout.addWidget(self.tabs)
