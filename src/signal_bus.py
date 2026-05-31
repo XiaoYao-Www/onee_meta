@@ -40,13 +40,45 @@ class _SettingChange(QObject):
         super().__init__()
 
 class _SignalBus(QObject):
-    """信號總線
+    """信號總線 — 應用層全域事件中樞
+
+    使用方式:
+        from src.signal_bus import SIGNAL_BUS
+        SIGNAL_BUS.uiSend.selectComicFolder.connect(handler)
+
+    測試時可呼叫 reset_signal_bus() 重建實例。
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.uiRevice = _UIReviceSignals()
         self.uiSend = _UISendSignals()
         self.settingChange = _SettingChange()
 
-SIGNAL_BUS = _SignalBus()
+
+# ── 全域實例 ────────────────────────────────────────────
+
+_SIGNAL_BUS: "_SignalBus | None" = None
+
+
+def _create_bus() -> "_SignalBus":
+    return _SignalBus()
+
+
+def get_signal_bus() -> "_SignalBus":
+    """取得目前的 SignalBus 實例（惰性建立）"""
+    global _SIGNAL_BUS
+    if _SIGNAL_BUS is None:
+        _SIGNAL_BUS = _create_bus()
+    return _SIGNAL_BUS
+
+
+def reset_signal_bus() -> "_SignalBus":
+    """重建 SignalBus（用於測試隔離）"""
+    global _SIGNAL_BUS
+    _SIGNAL_BUS = _create_bus()
+    return _SIGNAL_BUS
+
+
+# 模組級捷徑 — 向後相容
+SIGNAL_BUS = get_signal_bus()

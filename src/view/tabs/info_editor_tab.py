@@ -15,12 +15,13 @@ import re
 # 自訂庫
 from src.classes.calibre_scanner import CalibreSidecar
 from src.signal_bus import SIGNAL_BUS
-import src.app_config as APP_CONFIG
+from src.view.tabs.info_editor_config import infoEditorTabConfig
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.view.widgets.aspect_ratio_label import AspectRatioLabel
 from src.classes.model.comic_data import ComicData, XmlComicInfo
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 from src.classes.view.widgets.data_card import DataCard
+from src.layout_constants import EDITOR_SPLITTER_SIZES, SIDEBAR_WIDTH
 ## 翻譯
 from src.translations import TR
 
@@ -34,9 +35,8 @@ class InfoEditorTab(QWidget):
         self.editors: Dict[str, QLineEdit | SmartIntegerField | QTextEdit | QComboBox] = {}
         self.labels: Dict[str,QLabel] = {}
 
-        # --- 新增側邊欄控制變數 ---
-        self.SIDEBAR_WIDTH = 250
-        self.is_sidebar_expanded = False # 預設縮起
+        # --- 側邊欄控制變數 ---
+        self.is_sidebar_expanded = False
 
         # 初始化 UI
         self.init_ui()
@@ -65,7 +65,7 @@ class InfoEditorTab(QWidget):
         info_edit_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # 動態創建UI
-        for section_key, fields in APP_CONFIG.infoEditorTabConfig.items():
+        for section_key, fields in infoEditorTabConfig.items():
             toggle_button = QToolButton(text=TR.INFO_EDITOR_TAB[section_key](), checkable=True, checked=False) # type: ignore[attr-defined]
             toggle_button.setStyleSheet("QToolButton { border: none; }")
             toggle_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
@@ -179,7 +179,7 @@ class InfoEditorTab(QWidget):
         self.splitter.addWidget(self.right_sidebar_widget)
 
         # 6. 設定初始比例 (左側佔滿，右側 0)
-        self.splitter.setSizes([900, 100]) 
+        self.splitter.setSizes(list(EDITOR_SPLITTER_SIZES)) 
         self.splitter.setStretchFactor(0, 1) # 左側優先吃掉空間
         self.splitter.setStretchFactor(1, 0)
 
@@ -262,7 +262,7 @@ class InfoEditorTab(QWidget):
                 self.clear_data_cards()
 
             # 更新資料欄位
-            for section, fields in APP_CONFIG.infoEditorTabConfig.items():
+            for section, fields in infoEditorTabConfig.items():
                 for field_key, field_cfg in fields.items():
                     info_key = field_cfg["info_key"]
                     values = []
@@ -325,7 +325,7 @@ class InfoEditorTab(QWidget):
             }
         }
         valid_keys = set(ComicPlaceholderData.__annotations__.keys())
-        for section, fields in APP_CONFIG.infoEditorTabConfig.items():
+        for section, fields in infoEditorTabConfig.items():
             for field_key, field_cfg in fields.items():
                 info_key = field_cfg["info_key"]
                 editor = self.editors.get(info_key)
@@ -359,7 +359,7 @@ class InfoEditorTab(QWidget):
 
     def retranslateUi(self):
         """ UI 語言刷新 """
-        for section_key, fields in APP_CONFIG.infoEditorTabConfig.items():
+        for section_key, fields in infoEditorTabConfig.items():
             toggle_button: QToolButton = self.toggle_buttons[section_key]
             toggle_button.setText(TR.INFO_EDITOR_TAB[section_key]())
 

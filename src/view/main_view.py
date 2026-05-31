@@ -11,6 +11,7 @@ from typing import Optional, Any
 # 自訂庫
 from src.signal_bus import SIGNAL_BUS
 import src.app_config as APP_CONGIF
+from src.layout_constants import WINDOW_WIDTH, WINDOW_HEIGHT, DEFAULT_FONT_SIZE, MAIN_SPLITTER_SIZES
 from src.view.comic_list_view import ComicListView
 from src.view.operation_area import OperationArea
 from src.classes.view.widgets.loading_dialog import LoadingDialog
@@ -31,8 +32,8 @@ class MainView(QWidget):
         # 應用設定
         self.setWindowTitle(TR.MAIN_VIEW["Onee Meta"]())
         self.setWindowIcon(QIcon(APP_CONGIF.appIconPath))
-        self.resize(900, 750)
-        self.changeFontSize(10)
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.changeFontSize(DEFAULT_FONT_SIZE)
 
         # 訊號連接
         self.signal_connection()
@@ -53,7 +54,7 @@ class MainView(QWidget):
         splitter.addWidget(self.left_widget)
         splitter.addWidget(self.right_widget)
         ## 設定初始大小比例 (像素)
-        splitter.setSizes([200, 500])
+        splitter.setSizes(list(MAIN_SPLITTER_SIZES))
 
         # 處理中提示
         self.loading = LoadingDialog(TR.MAIN_VIEW["處理中"]())

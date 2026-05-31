@@ -14,10 +14,20 @@ class SmartIntegerField(QLineEdit):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setPlaceholderText(TR.UI_WIDGETS["輸入{keep}保留原值"]())
-        SIGNAL_BUS.uiRevice.translateUi.connect( # 翻譯處理
+
+        # 保存 connection handle，widget 銷毀時自動斷開
+        self._translate_conn = SIGNAL_BUS.uiRevice.translateUi.connect(
             lambda: self.setPlaceholderText(TR.UI_WIDGETS["輸入{keep}保留原值"]())
         )
+        self.destroyed.connect(self._on_destroyed)
+
         self.textChanged.connect(self._on_text_changed)
+
+    def _on_destroyed(self) -> None:
+        """widget 銷毀時斷開全域 signal 連接，防止 dangling slot crash"""
+        if self._translate_conn is not None:
+            SIGNAL_BUS.uiRevice.translateUi.disconnect(self._translate_conn)
+            self._translate_conn = None
 
     def _on_text_changed(self, text: str) -> None:
         """確認輸入狀態

@@ -2,9 +2,14 @@ import subprocess
 import shutil
 import os
 import json
+import tempfile
 from typing import cast, List, Dict, Any
 import re
 import xml.etree.ElementTree as ET
+
+from src.logging_config import get_logger
+
+_log = get_logger(__name__)
 
 class CalibreSidecar:
     def __init__(self, custom_path=None):
@@ -38,7 +43,7 @@ class CalibreSidecar:
             portable_settings = os.path.join(parent_dir, "Calibre Settings")
             if os.path.exists(portable_settings):
                 self.env["CALIBRE_CONFIG_DIRECTORY"] = portable_settings
-                print(f"檢測到便攜版設定目錄: {portable_settings}")
+                _log.info("檢測到便攜版設定目錄: %s", portable_settings)
 
     def list_metadata_plugins(self) -> List[Dict[str, Any]]:
         """最穩定方式：透過 calibre-debug 呼叫官方 API 取得所有 Metadata 來源插件"""
@@ -64,50 +69,52 @@ for p in plugins:
 print(json.dumps(result, ensure_ascii=False, indent=2))
 '''
 
-            # 寫入臨時腳本
-            temp_script = os.path.join(os.path.expanduser("~"), "calibre_temp_list_plugins.py")
-            with open(temp_script, "w", encoding="utf-8") as f:
-                f.write(script_content)
-
-            # 執行 calibre-debug -e
-            cmd = [cast(str, self.debug_exe), "-e", temp_script]
-            
-            result = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding='utf-8',
-                errors='replace',
-                env=self.env,
-                check=False  # 不強制 check=True，避免小錯誤中斷
+            # 寫入臨時腳本（使用 tempfile 避免多實例競爭）
+            fd, temp_script = tempfile.mkstemp(
+                suffix=".py", prefix="calibre_list_plugins_", text=True
             )
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(script_content)
 
-            # 清理臨時檔案
-            if os.path.exists(temp_script):
-                os.remove(temp_script)
+                # 執行 calibre-debug -e
+                cmd = [cast(str, self.debug_exe), "-e", temp_script]
+
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    env=self.env,
+                    check=False  # 不強制 check=True，避免小錯誤中斷
+                )
+            finally:
+                # 確保清理
+                if os.path.exists(temp_script):
+                    os.remove(temp_script)
 
             if result.returncode != 0:
-                print(f"calibre-debug 執行錯誤: {result.stderr}")
+                _log.error("calibre-debug 執行錯誤: %s", result.stderr)
                 return self._fallback_list()  # 如果失敗，退回備用方法
 
             # 解析 JSON 輸出
             try:
                 plugins_list = json.loads(result.stdout)
-                print(f"成功取得 {len(plugins_list)} 個 Metadata 來源插件")
+                _log.info("成功取得 %d 個 Metadata 來源插件", len(plugins_list))
                 return plugins_list
             except json.JSONDecodeError:
-                print("JSON 解析失敗，原始輸出：")
-                print(result.stdout)
+                _log.error("JSON 解析失敗，原始輸出：\n%s", result.stdout)
                 return []
 
         except Exception as e:
-            print(f"取得 Metadata 插件時發生錯誤: {e}")
+            _log.exception("取得 Metadata 插件時發生錯誤")
             return self._fallback_list()
 
     def _fallback_list(self):
         """備用方法：使用 calibre-customize --list-plugins"""
-        print("使用備用方法 (calibre-customize --list-plugins)")
+        _log.info("使用備用方法 (calibre-customize --list-plugins)")
         try:
             result = subprocess.run(
                 [cast(str, self.exe_path), "--list-plugins"],
@@ -234,17 +241,20 @@ print(json.dumps(result, ensure_ascii=False, indent=2))
             return entries
 
         except Exception as e:
-            print(f"執行 fetch-ebook-metadata 時發生錯誤: {e}")
+            _log.exception("執行 fetch-ebook-metadata 時發生錯誤")
             return None
 
 # ====================== 使用範例 ======================
 if __name__ == "__main__":
+    from src.logging_config import setup_logging
+    setup_logging()
+
     path = r"C:\no_installation_required\Calibre Portable\Calibre"
     scanner = CalibreSidecar(custom_path=path)
 
-    print("開始聚合抓取元數據（會同時查詢多個來源）...")
+    _log.info("開始聚合抓取元數據（會同時查詢多個來源）...")
 
-    # print(scanner.list_metadata_plugins())
+    # _log.info(scanner.list_metadata_plugins())
 
     # 方法一：使用全部已安裝的插件進行聚合搜索
     opf_content = scanner.fetch_metadata(
@@ -252,5 +262,5 @@ if __name__ == "__main__":
     )
 
     if opf_content:
-        print("抓取成功！部分 OPF 內容：")
-        print(opf_content)   # 只顯示前面部分
+        _log.info("抓取成功！部分 OPF 內容：")
+        _log.info(opf_content)   # 只顯示前面部分

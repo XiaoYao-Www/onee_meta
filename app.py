@@ -6,12 +6,15 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTranslator, Qt
 from PySide6.QtGui import QIcon
 # 自訂庫
+from src.logging_config import setup_logging
 import src.app_config as APP_CONFIG
 from src.model.main_model import MainModel
 from src.view.main_view import MainView
 from src.controller.main_controller import MainController
 
 if __name__ == "__main__":
+    setup_logging()
+
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
     # 1. 應用初始化

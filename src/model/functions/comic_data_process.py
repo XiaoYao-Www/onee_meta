@@ -9,6 +9,9 @@ import zipfile
 
 # 自訂庫
 from src.classes.model.comic_data import XmlComicInfo
+from src.logging_config import get_logger
+
+_log = get_logger(__name__)
 
 
 def xml2Data(xmlContext: bytes) -> XmlComicInfo:
@@ -23,7 +26,8 @@ def xml2Data(xmlContext: bytes) -> XmlComicInfo:
     # 解析錯誤回傳空資料
     try:
         tree = ET.fromstring(xmlContext)
-    except Exception as e:
+    except Exception:
+        _log.exception("XML 解析失敗 (前64字元): %.64s", xmlContext)
         return {
             "nsmap": {},
             "fields": {},

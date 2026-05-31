@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QDialog, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, QThread, Signal
 
+from src.layout_constants import LOADING_DIALOG_WIDTH, LOADING_DIALOG_HEIGHT
+
 class LoadingDialog(QDialog):
     """處理中提示
     """
@@ -24,7 +26,7 @@ class LoadingDialog(QDialog):
         layout.addWidget(self.infoLabel)
 
         self.setStyleSheet("background-color: rgba(0, 0, 0, 150); border-radius: 10px;")
-        self.resize(200, 100)
+        self.resize(LOADING_DIALOG_WIDTH, LOADING_DIALOG_HEIGHT)
 
     def setInfoText(self, info: str) -> None:
         """設置顯示提示

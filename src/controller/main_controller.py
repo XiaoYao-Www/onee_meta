@@ -3,10 +3,7 @@
 #####
 from PySide6.QtCore import QObject, QTranslator, QModelIndex, QItemSelectionModel
 from PySide6.QtWidgets import QApplication
-from datetime import datetime
-from typing import List, cast, Any
-import os
-import copy
+from typing import List, cast
 # 自訂庫
 from src.classes.calibre_scanner import CalibreSidecar
 from src.model.main_model import MainModel
@@ -14,9 +11,7 @@ from src.view.main_view import MainView
 from src.signal_bus import SIGNAL_BUS
 from src.translations import TR
 from src.classes.model.comic_data import XmlComicInfo, ComicData
-from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
-from src.controller.functions.placeholder_process import XmlDataPlaceholderProcess
-from src.controller.functions.xml_data_process import updataXmlComicInfo
+from src.controller.batch_processor import BatchProcessor
 
 class MainController(QObject):
     """主控制
@@ -79,7 +74,7 @@ class MainController(QObject):
         SIGNAL_BUS.uiSend.langChange.connect(self.changeLang) # 語言切換
         SIGNAL_BUS.uiSend.carlibrePathSet.connect(self.setCalibrePath) # Calibre路徑設定
         # 連接功能
-        self.model.comicListModel.listIndexChange = self.comicListIndexChanged # 漫畫排列後選擇
+        self.model.comicListModel.listIndexChanged.connect(self.comicListIndexChanged) # 漫畫排列後選擇
         SIGNAL_BUS.uiSend.comicListSort.connect( # 漫畫列表排序
             lambda x: self.model.comicListSorted(x)
         )
@@ -124,8 +119,9 @@ class MainController(QObject):
         selectedUuids: list[str] = [uuidList[listIndex] for listIndex in comic] # 選中漫畫UUID列表
         self.model.runningStore.set("selected_comics", selectedUuids) # 儲存選中UUID
         comicDataList: list[ComicData] = [
-            cast(ComicData, self.model.comicDataStore.get(uuid)) for uuid in selectedUuids
-            ] # 選中漫畫資料列表
+            data for uuid in selectedUuids
+            if (data := self.model.comicDataStore.get(uuid)) is not None
+        ]
         self.view.right_widget.info_editor_tab.setComicInfoData(comicDataList) # 填充顯示
 
 
@@ -147,64 +143,33 @@ class MainController(QObject):
         self.view.loading.close() # 關閉處理中
 
     def startProcess(self) -> None:
-        """開始處理
-        """
-        self.view.loading.show() # 顯示處理中
-        self.application.processEvents() # 刷新UI，確保Loading顯示
-        editer_data: XmlComicInfo = self.view.right_widget.info_editor_tab.getComicInfoData() # 取得編輯資料
-        uuid_select: list[str] = self.model.runningStore.get("selected_comics", []) # 取得選擇
-        comic_all_list: list[str] = self.model.runningStore.get("comic_uuid_list", []) # 當前漫畫列表
-        if not uuid_select or len(uuid_select) < 1 or not comic_all_list or len(comic_all_list) < 1:
-            self.view.loading.close() # 關閉處理中
-            return
-        fail_count: int = 0 # 失敗計數
-        # 處理每一筆漫畫
-        for order, uuid in enumerate(uuid_select, start= 1):
-            comic_data: ComicData = cast(ComicData, self.model.comicDataStore.get(uuid)) # 取得漫畫資料
-            filename_full = os.path.basename(comic_data["comic_path"]) # 取得檔名
-            file_name, file_ext = os.path.splitext(filename_full) # 分割副檔名
-            parent_folder = os.path.basename(os.path.dirname(comic_data["comic_path"])) # 取得父資料夾名
+        """開始處理 — 委派給 BatchProcessor"""
+        self.view.loading.show()
+        self.application.processEvents()
 
-            # 取得時間
-            now = datetime.now()
+        editor_data: XmlComicInfo = self.view.right_widget.info_editor_tab.getComicInfoData()
 
-            # 組合佔位符資料
-            placeholder: ComicPlaceholderData = {
-                "index": comic_all_list.index(uuid) + 1,
-                "order": order,
-                "file_name": file_name,
-                "file_ext": file_ext,
-                "parent_folder": parent_folder,
-                "year": str(now.year),
-                "month": f"{now.month:02d}",
-                "day": f"{now.day:02d}",
-                "date": now.strftime("%Y-%m-%d"),
-                "clear_old_title": cast(str, comic_data["xml_comic_info"]["fields"].get("base", {}).get("Title", "")).replace(" 🔒", "").replace("🔒", ""),
-                "image_count": comic_data["image_count"],
-            }
-            # 創建針對性Xml資料
-            placeholder_editer_data: XmlComicInfo = XmlDataPlaceholderProcess(editer_data, placeholder)
-            # 更新Xml資料
-            old_xml_data: XmlComicInfo = comic_data.get("xml_comic_info")
-            if old_xml_data == None:
-                continue
-            backup_xml_data: XmlComicInfo = copy.deepcopy(old_xml_data) # 先備份
-            updataXmlComicInfo(old_xml_data, placeholder_editer_data)
-            # 寫入檔案
-            if not(self.model.writeComic(uuid)):
-                # 寫入失敗時恢復資料
-                recover_comic_data = cast(ComicData, self.model.comicDataStore.get(uuid))["xml_comic_info"] = backup_xml_data
-                fail_count += 1
+        processor = BatchProcessor(
+            comic_data_store=self.model.comicDataStore,
+            running_store=self.model.runningStore,
+            write_comic_fn=self.model.writeComic,
+        )
+        result = processor.process(editor_data)
 
-        self.model.comicListModel.layoutChanged.emit() # 呼叫刷新列表顯示
-        self.view.left_widget.setSortType(0) # 改變排序方式
-        self.view.loading.close() # 關閉處理中
+        self.model.comicListModel.layoutChanged.emit()
+        self.view.left_widget.setSortType(0)
+        self.view.loading.close()
 
-        # 顯示處理結果
-        if fail_count > 0:
-            SIGNAL_BUS.uiRevice.sendCritical.emit("處理完成", f"已完成處理，但有 {fail_count} 筆寫入失敗。")
+        if result.total == 0:
+            return  # 無項目可處理
+        elif result.fail > 0:
+            SIGNAL_BUS.uiRevice.sendCritical.emit(
+                "處理完成", f"已完成處理，但有 {result.fail} 筆寫入失敗。"
+            )
         else:
-            SIGNAL_BUS.uiRevice.sendInformation.emit("處理完成", f"成功處理 {len(uuid_select)} 本漫畫。")
+            SIGNAL_BUS.uiRevice.sendInformation.emit(
+                "處理完成", f"成功處理 {result.success} 本漫畫。"
+            )
 
     ###### 連接功能
 

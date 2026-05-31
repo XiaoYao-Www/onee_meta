@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QVBoxLayout, QFrame, QGridLayout, QLabel, QPushBut
 from PySide6.QtCore import Qt, Signal
 
 from src.classes.view.widgets.clickable_label import ClickableLabel
+from src.layout_constants import TAG_GRID_MAX_COLUMNS
 
 
 # ==========================================
@@ -39,7 +40,7 @@ class DataCard(QFrame):
             tags_list = [t.strip() for t in data_dict['Tags'].split(',')]
             
             row, col = 0, 0
-            max_columns = 5 # 每行最多顯示 5 個 Tag
+            max_columns = TAG_GRID_MAX_COLUMNS
             
             for tag in tags_list:
                 if not tag: continue

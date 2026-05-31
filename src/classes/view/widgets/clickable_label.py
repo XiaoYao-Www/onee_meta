@@ -19,7 +19,7 @@ class ClickableLabel(QLabel):
         # 設定基本的 Hover 效果
 
     def mouseReleaseEvent(self, event):
-        # 當滑鼠放開時，觸發 clicked 訊號
-        if event.button() == Qt.MouseButton.LeftButton:
+        # 只在 bounds 內釋放才觸發（與 QPushButton 行為一致）
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.pos()):
             self.clicked.emit(self.field_name, self.text_value)
         super().mouseReleaseEvent(event)

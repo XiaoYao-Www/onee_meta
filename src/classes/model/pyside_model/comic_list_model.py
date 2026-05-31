@@ -5,21 +5,23 @@ from PySide6.QtCore import (
     Qt, QAbstractListModel, QModelIndex, QPersistentModelIndex,
     QMimeData, QDataStream, QByteArray, Signal
 )
-from typing import Any, cast, Sequence, List, Optional, Callable
+from typing import Any, cast, Sequence, List
 # 自訂庫
-from src.signal_bus import SIGNAL_BUS
 from src.classes.model.data_store import DataStore
 from src.classes.model.comic_data import ComicData
 
 class ComicListModel(QAbstractListModel):
     MIME_TYPE = "application/x-uuiditems"
+
+    # 拖曳排序後發出，參數為被移動的 UUID 列表
+    listIndexChanged = Signal(list)
+
     """漫畫列表模型
     """
     def __init__(self, uuidList: List[str], comicDataStore: DataStore):
         super().__init__()
         self.uuidList = uuidList # 漫畫UUID列表
         self.comicDataStore = comicDataStore # 漫畫資料儲存
-        self.listIndexChange: Optional[Callable[[List[str]], None]] = None  # 列表改動回調
 
     ###### 基本Model設定
 
@@ -49,8 +51,8 @@ class ComicListModel(QAbstractListModel):
         uuid = self.uuidList[index.row()]
         if role == Qt.ItemDataRole.DisplayRole:
             # 顯示 序號 + 訊息
-            edittingData: ComicData = cast(ComicData, self.comicDataStore.get(uuid, {}))
-            return edittingData.get("comic_path")
+            data = self.comicDataStore.get(uuid)
+            return data.get("comic_path", "") if data else ""
         return None
     
     ###### 權限設置
@@ -169,6 +171,5 @@ class ComicListModel(QAbstractListModel):
         self.layoutAboutToBeChanged.emit()
         self.layoutChanged.emit()
         # 列表改動通知
-        if self.listIndexChange != None:
-            self.listIndexChange(selectUuid)
+        self.listIndexChanged.emit(selectUuid)
         return True

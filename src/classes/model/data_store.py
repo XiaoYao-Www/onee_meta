@@ -1,127 +1,98 @@
 #####
-# 執行時數據儲存類
+# 執行時數據儲存類 (Qt-native)
 #####
-import threading
-from typing import Any, Dict, Optional, Set, Callable, TypeVar
+from typing import Any, Dict, Optional, TypeVar
+
+from PySide6.QtCore import QObject, Signal
+
+from src.logging_config import get_logger
+
+_log = get_logger(__name__)
 
 T = TypeVar('T')
 
-class DataStore:
-    """ 數據存儲類
-        ※ 取得的資料並非副本，修改須謹慎 
+
+class DataStore(QObject):
+    """數據存儲類 — Qt 原生化
+
+    所有讀寫必須發生在主執行緒。
+    ※ 取得的資料並非副本，修改須謹慎。
     """
-    
-    def __init__(self, id: Optional[str] = None):
-        self._id : Optional[str] = id
+
+    # 發出 (變動資料字典)
+    dataChanged = Signal(dict)
+
+    def __init__(self, store_id: Optional[str] = None, parent: Optional[QObject] = None) -> None:
+        super().__init__(parent)
+        self._store_id: Optional[str] = store_id
         self._data: Dict[str, Any] = {}
-        self._mutex = threading.Lock()
-        self._callbacks: Set[Callable[[Dict[str, Any], Optional[str]], None]] = set()
-    
+
+    # ── 屬性 ────────────────────────────────────────────
+
     @property
     def data(self) -> Dict[str, Any]:
-        """獲取全部資料
+        """獲取全部資料 (非副本)"""
+        return self._data
 
-        Returns:
-            Dict[str, Any]: 資料結構(資料名, 資料)
-        """
-        with self._mutex:
-            return self._data
-        
     @property
     def id(self) -> Optional[str]:
-        """獲取容器ID
+        """容器 ID"""
+        return self._store_id
 
-        Returns:
-            Optional[str]: ID
-        """
-        return self._id
-    
-    def subscribe(self, callback: Callable[[Dict[str, Any], Optional[str]], None]) -> None:
+    # ── 訂閱 (向後相容 API) ──────────────────────────────
+
+    def subscribe(self, callback: "Callable[[Dict[str, Any], Optional[str]], None]") -> "Callable":  # noqa: F821
         """訂閱數據變更
-            回掉函式結構 :
-                callback(變動資料字典, 容器id)
 
-        Args:
-            callback (Callable[[Dict[str, Any], Optional[str]], None]): 回調函數
+        callback 簽章: callback(changes: dict, store_id: str | None)
+        回傳 wrapper，可傳入 dataChanged.disconnect(wrapper) 斷開。
         """
-        with self._mutex:
-            self._callbacks.add(callback)
-    
-    def unsubscribe(self, callback: Callable[[Dict[str, Any], Optional[str]], None]) -> None:
-        """取消訂閱
+        store_id = self._store_id
 
-        Args:
-            callback (Callable[[Dict[str, Any], Optional[str]], None]): 目標函數
-        """
-        with self._mutex:
-            self._callbacks.discard(callback)
-    
-    def _notify(self, changes: Dict[str, Any]) -> None:
-        """內部通知機制
-
-        Args:
-            changes (Dict[str, Any]): 變動資料
-        """
-        with self._mutex:
-            callbacks = self._callbacks.copy()
-        for callback in callbacks:
+        def _wrapper(changes: Dict[str, Any]) -> None:
             try:
-                callback(changes, self._id)
+                callback(changes, store_id)
             except Exception:
-                import traceback
-                print(f"[DataStore:{self._id}] 回調錯誤，鍵: {list(changes.keys())}")
-                traceback.print_exc()
-    
-    def update(self, new_data: Dict[str, Any]) -> None:
-        """批量更新數據
-            若資料實際變更才通知
+                _log.exception("[DataStore:%s] 回調錯誤，鍵: %s", store_id, list(changes.keys()))
 
-        Args:
-            new_data (Dict[str, Any]): 改變的資料
-        """
-        changed = {}
-        with self._mutex:
-            for key, new_value in new_data.items():
-                old_value = self._data.get(key)
-                if old_value != new_value:
-                    self._data[key] = new_value
-                    changed[key] = new_value
-        if changed:
-            self._notify(changed)
-    
+        self.dataChanged.connect(_wrapper)
+        return _wrapper
+
+    def unsubscribe(self, wrapper: "Callable") -> None:  # noqa: F821
+        """取消訂閱 — 傳入 subscribe() 回傳的 wrapper"""
+        try:
+            self.dataChanged.disconnect(wrapper)
+        except (TypeError, RuntimeError):
+            _log.debug("[DataStore:%s] disconnect 失敗（可能已斷開）", self._store_id)
+
+    # ── 資料存取 ─────────────────────────────────────────
+
     def get(self, key: str, default: Optional[T] = None) -> T:
-        """獲取單個值
+        """獲取單個值"""
+        return self._data.get(key, default)
 
-        Args:
-            key (str): 鍵
-            default (Optional[T], optional): 預設值. Defaults to None.
-
-        Returns:
-            T: 值
-        """
-        with self._mutex:
-            return self._data.get(key, default)
-    
     def set(self, key: str, value: Any) -> None:
-        """設置單個值
-            若資料實際變更才通知
+        """設置單個值 — 若實際變更才發送 dataChanged"""
+        old_value = self._data.get(key)
+        if old_value == value:
+            return
+        self._data[key] = value
+        self.dataChanged.emit({key: value})
 
-        Args:
-            key (str): 鍵
-            value (Any): 值
-        """
-        with self._mutex:
+    def update(self, new_data: Dict[str, Any]) -> None:
+        """批量更新 — 只發送實際變更的鍵"""
+        changed: Dict[str, Any] = {}
+        for key, new_value in new_data.items():
             old_value = self._data.get(key)
-            if old_value == value:
-                return
-            self._data[key] = value
-        self._notify({key: value})
-    
+            if old_value != new_value:
+                self._data[key] = new_value
+                changed[key] = new_value
+        if changed:
+            self.dataChanged.emit(changed)
+
     def clear(self) -> None:
-        """清空所有數據
-        """
-        with self._mutex:
-            if not self._data:
-                return
-            self._data.clear()
-        self._notify({})
+        """清空所有數據"""
+        if not self._data:
+            return
+        self._data.clear()
+        self.dataChanged.emit({})

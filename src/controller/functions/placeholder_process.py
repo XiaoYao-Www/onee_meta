@@ -8,11 +8,11 @@ from PySide6.QtWidgets import (
     QLineEdit, QTextEdit, QComboBox
 )
 # 自訂庫
-from src.functions.unity_function import parseNamespacedKey
+from src.common.unity_function import parseNamespacedKey
 from src.classes.controller.comic_placeholder_data import ComicPlaceholderData
 from src.classes.view.widgets.smart_integer_field import SmartIntegerField
 from src.classes.model.comic_data import XmlComicInfo
-import src.app_config as APP_CONFIG
+from src.view.tabs.info_editor_config import infoEditorTabConfig
 
 
 def placeholderReplace(text: str, placeholderData: ComicPlaceholderData) -> str:
@@ -59,7 +59,7 @@ def XmlDataPlaceholderProcess(xmlData: XmlComicInfo, placeholderData: ComicPlace
     """
     newXmlData = copy.deepcopy(xmlData)
     # 處理資料
-    for section, fields in APP_CONFIG.infoEditorTabConfig.items():
+    for section, fields in infoEditorTabConfig.items():
         for field_key, field_cfg in fields.items():
             if not(field_cfg["type"] == QLineEdit or field_cfg["type"] == QTextEdit or field_cfg["type"] == SmartIntegerField):
                 continue
