@@ -20,7 +20,7 @@ jobs:
     env:
       PYTHON_VERSION: '3.11'
       # Nuitka 編譯命令
-      NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build'
+      NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build --assume-yes-for-downloads'
 
     steps:
       # ----------------------------
@@ -143,6 +143,16 @@ jobs:
           ZIP_FILE="$DW_PATH/depends22_x64.zip"
           curl -L -o "$ZIP_FILE" "https://www.dependencywalker.com/depends22_x64.zip"
           unzip -o "$ZIP_FILE" -d "$DW_PATH"
+
+      # ----------------------------
+      # 8.5 快取 Nuitka 下載的編譯器
+      # ----------------------------
+      - name: Cache Nuitka downloads
+        if: steps.check_version.outputs.version_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\Nuitka\Nuitka\Cache\downloads
+          key: ${{ runner.os }}-nuitka-downloads
 
       # ----------------------------
       # 9. 編譯 EXE
