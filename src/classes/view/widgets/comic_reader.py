@@ -186,6 +186,7 @@ class ComicReaderWidget(QDialog):
         self._closing: bool = False            # 關閉旗標，設為 True 後所有回呼跳過
         self._cache = _ImageCache(max_size=30) # 主快取，SINGLE/DOUBLE/SCROLL 共用
         self._workers: List[Tuple] = []        # ← 必須追蹤 thread 引用，否則 GC 會回收正在執行的 QThread
+        self._last_viewport_w = 0              # 上次 scroll viewport 寬度，用於 resize 偵測
 
         self._load_file_list()
 
@@ -684,7 +685,7 @@ class ComicReaderWidget(QDialog):
             return 0
         vp = self._scroll_area.viewport()
         vp_w = vp.width() if vp else self.width()
-        max_w = min(vp_w - 40, 800)
+        max_w = vp_w - 40
         if max_w < 100:
             max_w = 800  # fallback：視窗尚未完成 layout
         scaled = pm.scaled(max_w, pm.height() * max_w // pm.width(),
@@ -756,6 +757,23 @@ class ComicReaderWidget(QDialog):
             self.close()
         else:
             super().keyPressEvent(event)
+
+    # ── resize 事件：scroll 模式重新縮放 ──────────────
+
+    def resizeEvent(self, event) -> None:
+        """視窗縮放時，觸發 scroll 模式重新縮放可視圖片
+
+        SINGLE/DOUBLE 模式由 _PageView.resizeEvent → update() 處理，
+        scroll 模式的 _on_scroll 只綁 verticalScrollBar().valueChanged，
+        水平 resize 不會觸發它 → 需要此 handler 補上。
+        """
+        super().resizeEvent(event)
+        if self._mode == ReadingMode.SCROLL:
+            if hasattr(self, '_scroll_area') and self._scroll_area is not None:
+                vp_w = self._scroll_area.viewport().width()
+                if vp_w != self._last_viewport_w:
+                    self._last_viewport_w = vp_w
+                    self._scroll_debounce.start()
 
     # ── 關閉 ──────────────────────────────────────────
 
