@@ -182,7 +182,7 @@ jobs:
       # ----------------------------
       - name: Sign EXE with Self-Signed Certificate
         if: steps.check_version.outputs.version_changed == 'true'
-        shell: powershell
+        shell: pwsh # 將 powershell 改為 pwsh，解決 Console 中文亂碼問題
         run: |
           Write-Output "開始進行自動化數位簽章流程..."
           
@@ -192,7 +192,7 @@ jobs:
           # 2. 定義產出的 EXE 路徑
           $exePath = "dev/build/app.dist/app.exe"
           
-          # 3. 動態尋找 Windows SDK 中的 signtool.exe (避免寫死路徑因 SDK 版本更新而失效)
+          # 3. 動態尋找 Windows SDK 中的 signtool.exe
           $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Filter "signtool.exe" -Recurse | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).FullName
           
           if (-not $signtool) {
@@ -201,8 +201,8 @@ jobs:
           }
           Write-Output "成功定位 SignTool: $signtool"
           
-          # 4. 執行數位簽章並附加標準時間戳記 (確保證書過期後簽章依然有效)
-          & $signtool sign /a /sha1 $cert.Thumbprint /t http://timestamp.digicert.com $exePath
+          # 4. 執行數位簽章 (已補上 /fd SHA256 解決演算法未指定的問題)
+          & $signtool sign /a /sha1 $cert.Thumbprint /fd SHA256 /t http://timestamp.digicert.com $exePath
           
           Write-Output "EXE 數位簽章封裝成功！"
 
