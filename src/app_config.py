@@ -10,7 +10,7 @@ appIconPath = "assets/icon.png"
 # 翻譯檔位置
 translationFilePath = "assets/translations"
 # 版本
-appVersion = "1.2.6"
+appVersion = "1.2.7"
 # 漫畫壓縮檔副檔名
 compressionComicExt = (".zip", ".cbz")
 # 平行處理工作執行緒數 (I/O 密集型，建議設為 CPU 核心數)
