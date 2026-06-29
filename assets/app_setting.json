@@ -12,5 +12,6 @@
     "allow_files": [
         ".nomedia"
     ],
-    "calibre_path": "C:\\no_installation_required\\Calibre Portable\\Calibre"
+    "calibre_path": "C:\\no_installation_required\\Calibre Portable\\Calibre",
+    "dual_comic_layout": 1
 }

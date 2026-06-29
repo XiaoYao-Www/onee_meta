@@ -27,6 +27,7 @@ class MainModel:
                 "image_exts": [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif"],
                 "allow_files": [".nomedia"],
                 "calibre_path": "",
+                "dual_comic_layout": 0,
             },
         )
         # 向後相容別名

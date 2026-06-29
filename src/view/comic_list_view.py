@@ -4,7 +4,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QListView,
     QAbstractItemView, QPushButton, QComboBox,
-    QLabel, QHBoxLayout, QFileDialog,
+    QLabel, QHBoxLayout, QFileDialog, QSplitter,
 )
 from PySide6.QtCore import Qt, QSignalBlocker, QAbstractItemModel, QItemSelection
 from typing import Optional, Dict, List, Set
@@ -70,8 +70,24 @@ class ComicListView(QWidget):
         self.comic_list.setAcceptDrops(True) # 可放置
         self.comic_list.setDropIndicatorShown(True)  # 顯示 drop 指示線
         ## 行號
-        delegate = NumberedItemDelegate()
-        self.comic_list.setItemDelegate(delegate)
+        self.comic_list.setItemDelegate(NumberedItemDelegate())
+
+        # 第二漫畫列表（雙列表模式用，預設隱藏）
+        self.comic_list_2 = QListView()
+        self.comic_list_2.setViewMode(QListView.ViewMode.ListMode)
+        self.comic_list_2.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.comic_list_2.setDragDropMode(QListView.DragDropMode.InternalMove)
+        self.comic_list_2.setDragDropOverwriteMode(False)
+        self.comic_list_2.setDragEnabled(True)
+        self.comic_list_2.setAcceptDrops(True)
+        self.comic_list_2.setDropIndicatorShown(True)
+        self.comic_list_2.setItemDelegate(NumberedItemDelegate())
+        self.comic_list_2.hide()
+
+        # 雙列表 splitter（先垂直，setDualComicLayout 會依模式切換方向）
+        self.list_splitter = QSplitter(Qt.Orientation.Vertical)
+        self.list_splitter.addWidget(self.comic_list)
+        self.list_splitter.addWidget(self.comic_list_2)
 
         # 結構組合
         self.ui_layout = QVBoxLayout()
@@ -81,7 +97,7 @@ class ComicListView(QWidget):
         ## 添加內容
         self.ui_layout.addWidget(self.comic_path_button)
         self.ui_layout.addLayout(info_layout)
-        self.ui_layout.addWidget(self.comic_list)
+        self.ui_layout.addWidget(self.list_splitter, stretch=1)
         self.setLayout(self.ui_layout)
 
     def signal_connection(self):
@@ -109,16 +125,14 @@ class ComicListView(QWidget):
         if folder:
            SIGNAL_BUS.uiSend.selectComicFolder.emit(folder)
 
-    def comicSelectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None:
+    def comicSelectionChanged(self, from_view: QListView) -> None:
         """漫畫選擇
 
         Args:
-            selected (QItemSelection): 選擇項
-            deselected (QItemSelection): 未選擇項
+            from_view (QListView): 觸發選擇變更的列表
         """
         # 取得所有選擇
-        selection_model = self.comic_list.selectionModel()
-        selected_indexes = selection_model.selectedIndexes()
+        selected_indexes = from_view.selectedIndexes()
         # 取得row列表
         selected_rows = sorted({idx.row() for idx in selected_indexes})
         # 傳送和修改顯示
@@ -134,7 +148,13 @@ class ComicListView(QWidget):
             model (QAbstractItemModel): 模型
         """
         self.comic_list.setModel(model)
-        self.comic_list.selectionModel().selectionChanged.connect(self.comicSelectionChanged)
+        self.comic_list.selectionModel().selectionChanged.connect(
+            lambda sel, desel, v=self.comic_list: self.comicSelectionChanged(v)
+        )
+        self.comic_list_2.setModel(model)
+        self.comic_list_2.selectionModel().selectionChanged.connect(
+            lambda sel, desel, v=self.comic_list_2: self.comicSelectionChanged(v)
+        )
 
     def changeInfoLabel(self, select: Optional[int] = None, total: Optional[int] = None) -> None:
         """切換顯示資訊
@@ -162,6 +182,29 @@ class ComicListView(QWidget):
         """
         with(QSignalBlocker(self.comic_list_sort)):
             self.comic_list_sort.setCurrentIndex(index)
+
+    def setDualComicLayout(self, layout: int) -> None:
+        """設定雙列表佈局模式
+
+        Args:
+            layout: 0=關閉, 1=左右並排, 2=上下垂直
+        """
+        if layout == 0:
+            # 關閉雙列表
+            self.comic_list_2.hide()
+            self.comic_list.setDragDropMode(QListView.DragDropMode.InternalMove)
+        else:
+            # 開啟雙列表
+            self.comic_list_2.show()
+            if layout == 1:
+                self.list_splitter.setOrientation(Qt.Orientation.Horizontal)
+            else:  # layout == 2
+                self.list_splitter.setOrientation(Qt.Orientation.Vertical)
+            # 用 setStretchFactor 取代 setSizes：跨 resize 保持比例，不受時機影響
+            self.list_splitter.setStretchFactor(0, 1)
+            self.list_splitter.setStretchFactor(1, 1)
+            self.comic_list.setDragDropMode(QListView.DragDropMode.DragDrop)
+            self.comic_list_2.setDragDropMode(QListView.DragDropMode.DragDrop)
 
     def retranslateUi(self):
         """UI 語言刷新

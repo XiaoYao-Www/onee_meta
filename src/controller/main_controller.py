@@ -56,6 +56,7 @@ class MainController(QObject):
         self.setAllowFile(self.model.appSetting.get("allow_files", []))
         self.changeLang(self.model.appSetting.get("lang", ""))
         self.setCalibrePath(self.model.appSetting.get("calibre_path", ""))
+        self.setDualComicLayout(self.model.appSetting.get("dual_comic_layout", 0))
 
     ### 信號連接 ###
 
@@ -65,12 +66,14 @@ class MainController(QObject):
         bus.uiSend.comicListSelected.connect(self.selectComic)
         bus.uiSend.startProcess.connect(self.startProcess)
         self.view.left_widget.comic_list.doubleClicked.connect(self.openComicReader)
+        self.view.left_widget.comic_list_2.doubleClicked.connect(self.openComicReader)
         bus.uiSend.runScanner.connect(self.runScanner)
         bus.uiSend.fontSizeSet.connect(self.setAppFontSize)
         bus.uiSend.imgExtensionSet.connect(self.setImageExt)
         bus.uiSend.allowFileSet.connect(self.setAllowFile)
         bus.uiSend.langChange.connect(self.changeLang)
         bus.uiSend.carlibrePathSet.connect(self.setCalibrePath)
+        bus.uiSend.dualComicLayoutSet.connect(self.setDualComicLayout)
         self.model.comicListModel.listIndexChanged.connect(self.comicListIndexChanged)
         bus.uiSend.comicListSort.connect(lambda x: self.model.comicListSorted(x))
 
@@ -315,18 +318,22 @@ class MainController(QObject):
     # ── 連接功能 ────────────────────────────────────────
 
     def comicListIndexChanged(self, uuidList: list[str]) -> None:
-        select_model = self.view.left_widget.comic_list.selectionModel()
-        select_model.clearSelection()
-
-        for uuid in uuidList:
-            try:
-                row = self.model.comicListModel.uuidList.index(uuid)
-            except ValueError:
+        left = self.view.left_widget
+        # 在主列表和副列表上都更新選取
+        for view in (left.comic_list, left.comic_list_2):
+            if not view.isVisible():
                 continue
-            idx = self.model.comicListModel.index(row)
-            select_model.select(idx, QItemSelectionModel.SelectionFlag.Select)
+            select_model = view.selectionModel()
+            select_model.clearSelection()
+            for uuid in uuidList:
+                try:
+                    row = self.model.comicListModel.uuidList.index(uuid)
+                except ValueError:
+                    continue
+                idx = self.model.comicListModel.index(row)
+                select_model.select(idx, QItemSelectionModel.SelectionFlag.Select)
 
-        self.view.left_widget.setSortType(0)
+        left.setSortType(0)
 
     # ── 應用設定 ────────────────────────────────────────
 
@@ -346,6 +353,17 @@ class MainController(QObject):
     def setCalibrePath(self, path: str) -> None:
         self.model.appSetting.set("calibre_path", path)
         self.view.right_widget.app_setting_tab.calibrePathChangedDisplay(path)
+
+    def setDualComicLayout(self, layout: int) -> None:
+        """設定雙列表佈局模式
+
+        Args:
+            layout: 0=關閉, 1=左右並排, 2=上下垂直
+        """
+        self.model.appSetting.set("dual_comic_layout", layout)
+        self.view.left_widget.setDualComicLayout(layout)
+        self.view.right_widget.app_setting_tab.dualComicLayoutChangedDisplay(layout)
+        SIGNAL_BUS.settingChange.dualComicLayout.emit(layout)
 
     def changeLang(self, langName: str) -> None:
         lang_file = self.model.runningStore.get("translation_files", {}).get(langName)

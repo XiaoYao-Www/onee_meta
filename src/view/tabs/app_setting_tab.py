@@ -65,6 +65,16 @@ class AppSettingTab(QWidget):
         self.carlibre_path_label = QLabel(TR.APP_SETTING_TAB["Calibre路徑："]())
         self.carlibre_path_edit = QLineEdit()
 
+        # 雙列表佈局
+        dual_comic_layout_layout = QHBoxLayout()
+        self.dual_comic_layout_label = QLabel(TR.APP_SETTING_TAB["雙列表佈局："]())
+        self.dual_comic_layout_combo = QComboBox()
+        self.dual_comic_layout_combo.addItems([
+            TR.APP_SETTING_TAB["關閉"](),
+            TR.APP_SETTING_TAB["左右並排"](),
+            TR.APP_SETTING_TAB["上下垂直"](),
+        ])
+
         # 結構組合
         ui_layout = QVBoxLayout()
         ## 布局設置
@@ -91,6 +101,10 @@ class AppSettingTab(QWidget):
         carlibre_path_layout.addWidget(self.carlibre_path_label, stretch=1)
         carlibre_path_layout.addWidget(self.carlibre_path_edit, stretch=4)
         ui_layout.addLayout(carlibre_path_layout)
+        ### 雙列表佈局
+        dual_comic_layout_layout.addWidget(self.dual_comic_layout_label, stretch=1)
+        dual_comic_layout_layout.addWidget(self.dual_comic_layout_combo, stretch=4)
+        ui_layout.addLayout(dual_comic_layout_layout)
         ### 主要輸出
         self.setLayout(ui_layout)
 
@@ -107,6 +121,10 @@ class AppSettingTab(QWidget):
         self.lang_select_combo.currentTextChanged.connect(lambda lang: SIGNAL_BUS.uiSend.langChange.emit(lang))
         # Calibre路徑設定
         self.carlibre_path_edit.textChanged.connect(lambda path: SIGNAL_BUS.uiSend.carlibrePathSet.emit(path))
+        # 雙列表佈局設定
+        self.dual_comic_layout_combo.currentIndexChanged.connect(
+            lambda idx: SIGNAL_BUS.uiSend.dualComicLayoutSet.emit(idx)
+        )
         # 語言刷新
         SIGNAL_BUS.uiRevice.translateUi.connect(self.retranslateUi)
 
@@ -164,6 +182,15 @@ class AppSettingTab(QWidget):
         with QSignalBlocker(self.carlibre_path_edit):
             self.carlibre_path_edit.setText(path)
 
+    def dualComicLayoutChangedDisplay(self, layout: int) -> None:
+        """雙列表佈局變換顯示
+
+        Args:
+            layout (int): 0=關閉, 1=左右並排, 2=上下垂直
+        """
+        with QSignalBlocker(self.dual_comic_layout_combo):
+            self.dual_comic_layout_combo.setCurrentIndex(layout)
+
     ###### 設定修改
 
     def settingImageExtension(self, extStr: str) -> None:
@@ -197,3 +224,13 @@ class AppSettingTab(QWidget):
         self.allow_files_label.setText(TR.APP_SETTING_TAB["允許檔案："]())
         # 語言選擇
         self.lang_select_label.setText(TR.APP_SETTING_TAB["語言選擇："]())
+        # 雙列表佈局
+        layout_index = self.dual_comic_layout_combo.currentIndex()
+        self.dual_comic_layout_label.setText(TR.APP_SETTING_TAB["雙列表佈局："]())
+        self.dual_comic_layout_combo.clear()
+        self.dual_comic_layout_combo.addItems([
+            TR.APP_SETTING_TAB["關閉"](),
+            TR.APP_SETTING_TAB["左右並排"](),
+            TR.APP_SETTING_TAB["上下垂直"](),
+        ])
+        self.dual_comic_layout_combo.setCurrentIndex(layout_index)

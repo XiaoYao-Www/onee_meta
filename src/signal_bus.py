@@ -16,6 +16,7 @@ class _UISendSignals(QObject):
     allowFileSet = Signal(list)
     langChange = Signal(str)
     carlibrePathSet = Signal(str)
+    dualComicLayoutSet = Signal(int)
     runScanner = Signal(str, str, str)
 
     def __init__(self):
@@ -35,6 +36,7 @@ class _SettingChange(QObject):
     """設定變更
     """
     fontSize = Signal(int) # 字體大小改變
+    dualComicLayout = Signal(int) # 雙列表佈局改變
 
     def __init__(self):
         super().__init__()
