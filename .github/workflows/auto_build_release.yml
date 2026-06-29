@@ -1,7 +1,7 @@
 #####
-# 自動編譯 EXE 並建立 Release（正式版）
+# 自動編譯 EXE、數位簽章並建立 Release（正式版）
 #####
-name: Auto Build and Release EXE
+name: Auto Build, Sign, and Release EXE
 
 on:
   push:
@@ -19,8 +19,8 @@ jobs:
     runs-on: windows-latest
     env:
       PYTHON_VERSION: '3.11'
-      # Nuitka 編譯命令
-      NUITKA_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build --assume-yes-for-downloads'
+      # 基礎 Nuitka 命令（移除了中繼資料與編譯器指定，改在下方步驟中動態拼接）
+      NUITKA_BASE_CMD: 'nuitka app.py --standalone --show-progress --disable-console --remove-output --noinclude-default-mode=nofollow --windows-icon-from-ico=assets/icon.png --include-data-dir=assets=assets --enable-plugin=pyside6 --include-qt-plugins=sensible --lto=yes -j 20 --output-dir=dev/build --assume-yes-for-downloads'
 
     steps:
       # ----------------------------
@@ -32,29 +32,25 @@ jobs:
           fetch-depth: 0
 
       # ----------------------------
-      # 2. 檢查版本號
+      # 2. 檢查版本號 (確保後續步驟可動態調用)
       # ----------------------------
       - name: Get version from Python file
         id: check_version
         shell: bash
         run: |
           set -e
-          # 從 app_config.py 獲取當前版本號
           CURRENT_VERSION=$(python -c 'import re; print(re.search(r"appVersion\s*=\s*\"([^\"]+)\"", open("src/app_config.py", encoding="utf-8").read()).group(1))')
           echo "Current version: $CURRENT_VERSION"
 
-          # 獲取最新標籤
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LAST_TAG" ]; then
             echo "No previous tags found, proceeding with build."
             echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             echo "version_changed=true" >> $GITHUB_OUTPUT
           else
-            # 從標籤提取版本號（假設標籤格式為 vX.Y.Z_Auto）
             LAST_VERSION=$(echo "$LAST_TAG" | sed 's/^v\(.*\)_Auto$/\1/')
             echo "Last version: $LAST_VERSION"
 
-            # 比較版本號
             if [ "$CURRENT_VERSION" != "$LAST_VERSION" ]; then
               echo "Version changed, proceeding with build."
               echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
@@ -66,7 +62,7 @@ jobs:
           fi
 
       # ----------------------------
-      # 3. 設定 Python
+      # 3. 設定 Python環境
       # ----------------------------
       - name: Setup Python
         if: steps.check_version.outputs.version_changed == 'true'
@@ -75,7 +71,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       # ----------------------------
-      # 4. 偵測架構
+      # 4. 偵測系統架構
       # ----------------------------
       - name: Detect architecture
         if: steps.check_version.outputs.version_changed == 'true'
@@ -87,19 +83,30 @@ jobs:
           echo "Detected architecture: $ARCH"
 
       # ----------------------------
-      # 5. 快取 pip
+      # 5. 高效快取控制 (提高 CI 重複建置速度)
       # ----------------------------
-      - name: Cache pip
+      - name: Cache pip dependencies
         if: steps.check_version.outputs.version_changed == 'true'
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\pip\Cache
           key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml','**/poetry.lock','**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache Nuitka compiler and downloads
+        if: steps.check_version.outputs.version_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\Nuitka\Nuitka\Cache
+          key: ${{ runner.os }}-nuitka-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-nuitka-
 
       # ----------------------------
-      # 6. 安裝依賴 (自動偵測 pyproject.toml / pdm / requirements)
+      # 6. 自動化安裝專案生產依賴
       # ----------------------------
-      - name: Install dependencies
+      - name: Install project dependencies
         if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
@@ -123,46 +130,81 @@ jobs:
           fi
 
       # ----------------------------
-      # 7. 安裝 Nuitka 與必要依賴
+      # 7. 安裝 Nuitka 編譯工具
       # ----------------------------
       - name: Install Nuitka
         if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
-          python -m pip install nuitka numpy pandas scipy matplotlib
+          python -m pip install nuitka
 
       # ----------------------------
-      # 8. 下載並解壓 Dependency Walker
+      # 8. 預載 Dependency Walker (避免 Nuitka 執行時下載失敗)
       # ----------------------------
       - name: Download and Extract Dependency Walker
         if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
           DW_PATH="$LOCALAPPDATA/Nuitka/Nuitka/Cache/downloads/depends/x86_64"
-          mkdir -p "$DW_PATH"
-          ZIP_FILE="$DW_PATH/depends22_x64.zip"
-          curl -L -o "$ZIP_FILE" "https://www.dependencywalker.com/depends22_x64.zip"
-          unzip -o "$ZIP_FILE" -d "$DW_PATH"
+          if [ ! -f "$DW_PATH/depends.exe" ]; then
+            mkdir -p "$DW_PATH"
+            ZIP_FILE="$DW_PATH/depends22_x64.zip"
+            curl -L -o "$ZIP_FILE" "https://www.dependencywalker.com/depends22_x64.zip"
+            unzip -o "$ZIP_FILE" -d "$DW_PATH"
+          else
+            echo "Dependency Walker found in cache, skipping download."
+          fi
 
       # ----------------------------
-      # 8.5 快取 Nuitka 下載的編譯器
-      # ----------------------------
-      - name: Cache Nuitka downloads
-        if: steps.check_version.outputs.version_changed == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~\AppData\Local\Nuitka\Nuitka\Cache\downloads
-          key: ${{ runner.os }}-nuitka-downloads
-
-      # ----------------------------
-      # 9. 編譯 EXE
+      # 9. 編譯 EXE (動態注入完整資訊，強制使用 MinGW)
       # ----------------------------
       - name: Build exe with Nuitka
         if: steps.check_version.outputs.version_changed == 'true'
         shell: bash
         run: |
-          echo "Running Nuitka build..."
-          eval "python -m ${NUITKA_CMD}"
+          VERSION="${{ steps.check_version.outputs.version }}"
+          echo "Running Nuitka build for Version $VERSION..."
+          
+          # 拼接完整的防毒優化命令：強制 --mingw64 並注入完整的公司與版本資訊
+          FULL_CMD="python -m ${NUITKA_BASE_CMD} \
+            --mingw64 \
+            --company-name='XiaoYao' \
+            --product-name='Onee Meta' \
+            --product-version='${VERSION}' \
+            --file-version='${VERSION}' \
+            --file-description='Onee Meta Desktop Application' \
+            --copyright='Copyright © 2026 XiaoYao. All rights reserved.'"
+          
+          eval "$FULL_CMD"
+
+      # ----------------------------
+      # 9.5 建立自簽憑證並為 EXE 數位簽章 (核心防毒誤報優化)
+      # ----------------------------
+      - name: Sign EXE with Self-Signed Certificate
+        if: steps.check_version.outputs.version_changed == 'true'
+        shell: powershell
+        run: |
+          Write-Output "開始進行自動化數位簽章流程..."
+          
+          # 1. 建立代碼簽署專用的自我簽署憑證
+          $cert = New-SelfSignedCertificate -Type CodeSigning -Subject "CN=XiaoYao-OpenSource" -CertStoreLocation "Cert:\CurrentUser\My"
+          
+          # 2. 定義產出的 EXE 路徑
+          $exePath = "dev/build/app.dist/app.exe"
+          
+          # 3. 動態尋找 Windows SDK 中的 signtool.exe (避免寫死路徑因 SDK 版本更新而失效)
+          $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Filter "signtool.exe" -Recurse | Where-Object { $_.FullName -like "*x64*" } | Select-Object -First 1).FullName
+          
+          if (-not $signtool) {
+              Write-Error "找不到 signtool.exe，請檢查 Windows Kit 是否存在。"
+              exit 1
+          }
+          Write-Output "成功定位 SignTool: $signtool"
+          
+          # 4. 執行數位簽章並附加標準時間戳記 (確保證書過期後簽章依然有效)
+          & $signtool sign /a /sha1 $cert.Thumbprint /t http://timestamp.digicert.com $exePath
+          
+          Write-Output "EXE 數位簽章封裝成功！"
 
       # ----------------------------
       # 10. 封裝為 ZIP
@@ -178,7 +220,7 @@ jobs:
           echo "Created ZIP: $FILE_NAME.zip"
 
       # ----------------------------
-      # 11. 上傳 artifact
+      # 11. 上傳 Artifact
       # ----------------------------
       - name: Upload artifact
         if: steps.check_version.outputs.version_changed == 'true'
@@ -188,7 +230,7 @@ jobs:
           path: ${{ steps.zip_file.outputs.file_name }}.zip
 
       # ----------------------------
-      # 12. 收集 commit 訊息
+      # 12. 收集 Commit 訊息
       # ----------------------------
       - name: Collect commit logs since last release
         if: steps.check_version.outputs.version_changed == 'true'
@@ -197,22 +239,21 @@ jobs:
         run: |
           set -e
           export LC_ALL=C.UTF-8
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "") # 獲取最新標籤
-          if [ -z "$LAST_TAG" ]; then # 生成提交日誌
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" | tr -d '\r')
           else
             CHANGELOG=$(git log "$LAST_TAG"..HEAD --pretty=format:"- %s (%h)" | tr -d '\r')
           fi
-          if [ -z "$CHANGELOG" ]; then # 檢查是否為空
+          if [ -z "$CHANGELOG" ]; then
             CHANGELOG="無變更內容"
           fi
-          # 將日誌寫入 GITHUB_OUTPUT
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       # ----------------------------
-      # 13. 建立 Release（正式版）
+      # 13. 建立 Release 頁面並發布
       # ----------------------------
       - name: Create Release
         if: steps.check_version.outputs.version_changed == 'true'
